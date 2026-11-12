@@ -1,14 +1,5 @@
 import React, { useRef, useState } from 'react';
-import {
-  Download,
-  Monitor,
-  Moon,
-  Sparkles,
-  Sun,
-  Trash2,
-  Upload,
-  X,
-} from 'lucide-react';
+import { BookOpen, Download, Monitor, Moon, Sun, Trash2, Upload, X } from 'lucide-react';
 import { getSystemPrefersDark } from '../../lib/theme';
 import { useBibleStore } from '../../store/useBibleStore';
 import type { ColorSchemePreference } from '../../types/bible';
@@ -44,7 +35,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `selah-sanctuary-backup.json`;
+    a.download = 'selah-sanctuary-backup.json';
     a.click();
     URL.revokeObjectURL(url);
     setStatusMsg('Backup JSON downloaded.');
@@ -57,7 +48,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
     try {
       const text = await file.text();
       const count = await importBackupJson(text);
-      setStatusMsg(`Successfully restored ${count} reading log entries.`);
+      setStatusMsg(`Restored ${count} reading log entries.`);
       setErrorMsg(null);
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Could not import backup file.');
@@ -72,15 +63,37 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
     label: string;
     detail: string;
     icon: React.ComponentType<{ className?: string }>;
+    swatchBg: string;
+    swatchInk: string;
+    swatchAccent: string;
   }[] = [
     {
       id: 'system',
       label: 'System',
-      detail: `Currently ${systemDark ? 'dark' : 'light'}`,
+      detail: `Matches OS (${systemDark ? 'dark' : 'light'})`,
       icon: Monitor,
+      swatchBg: systemDark ? '#12151B' : '#F7F7F4',
+      swatchInk: systemDark ? '#EDEFF3' : '#161B22',
+      swatchAccent: systemDark ? '#7FA9E8' : '#1D427D',
     },
-    { id: 'light', label: 'Dawn Parchment', detail: 'Light theme', icon: Sun },
-    { id: 'dark', label: 'Vesper Candlelight', detail: 'Dark theme', icon: Moon },
+    {
+      id: 'light',
+      label: 'Dawn Parchment',
+      detail: 'Alabaster paper',
+      icon: Sun,
+      swatchBg: '#F7F7F4',
+      swatchInk: '#161B22',
+      swatchAccent: '#1D427D',
+    },
+    {
+      id: 'dark',
+      label: 'Vesper Candlelight',
+      detail: 'Midnight slate',
+      icon: Moon,
+      swatchBg: '#12151B',
+      swatchInk: '#EDEFF3',
+      swatchAccent: '#7FA9E8',
+    },
   ];
 
   return (
@@ -90,29 +103,29 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
           <div>
             <h2
               id="settings-title"
-              className="font-display text-2xl font-semibold text-[var(--text-primary)]"
+              className="font-display text-2xl font-medium text-[var(--text-primary)]"
             >
               Sanctuary Settings
             </h2>
             <p className="text-xs text-[var(--text-secondary)]">
-              Appearance, reading rhythm rules, and local backup portability.
+              Appearance, streak cadence, and local JSON backup.
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close settings"
-            className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
         <div className="space-y-6 overflow-y-auto p-6">
-          {/* Theme */}
+          {/* Theme Swatches */}
           <fieldset>
-            <legend className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-              Color Scheme
+            <legend className="text-xs font-medium text-[var(--text-secondary)]">
+              Color scheme
             </legend>
             <div className="mt-2.5 grid gap-2.5 sm:grid-cols-3">
               {themeOptions.map((opt) => {
@@ -124,20 +137,36 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
                     type="button"
                     onClick={() => setColorScheme(opt.id)}
                     aria-pressed={active}
-                    className={`flex flex-col items-start rounded-xl border p-3 text-left transition-colors ${
+                    className={`flex flex-col items-start rounded-md border p-3 text-left transition-colors ${
                       active
                         ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]'
-                        : 'border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:border-[var(--border-strong)]'
+                        : 'border-[var(--border-subtle)] bg-[var(--bg-canvas)] hover:border-[var(--border-strong)]'
                     }`}
                   >
-                    <Icon
-                      className={`h-4 w-4 ${active ? 'text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}
-                      aria-hidden="true"
-                    />
-                    <span className="mt-2 text-sm font-semibold text-[var(--text-primary)]">
+                    <div className="flex w-full items-center justify-between">
+                      <Icon
+                        className={`h-4 w-4 ${active ? 'text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}
+                        aria-hidden="true"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="flex h-4 w-7 items-center justify-around rounded-xs border border-black/15 px-0.5"
+                        style={{ backgroundColor: opt.swatchBg }}
+                      >
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: opt.swatchInk }}
+                        />
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: opt.swatchAccent }}
+                        />
+                      </span>
+                    </div>
+                    <span className="mt-2.5 text-sm font-medium text-[var(--text-primary)]">
                       {opt.label}
                     </span>
-                    <span className="text-[0.7rem] text-[var(--text-secondary)]">{opt.detail}</span>
+                    <span className="text-xs text-[var(--text-secondary)]">{opt.detail}</span>
                   </button>
                 );
               })}
@@ -146,16 +175,16 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
 
           {/* Preferences */}
           <div className="space-y-3 border-t border-[var(--border-subtle)] pt-5">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-              Rhythm & Celebrations
+            <h3 className="font-display text-base font-medium text-[var(--text-primary)]">
+              Reading cadence & feedback
             </h3>
 
-            <label className="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+            <label className="flex cursor-pointer items-start justify-between gap-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5">
               <div>
-                <span className="block text-sm font-semibold text-[var(--text-primary)]">
-                  Sabbath Grace Day (1 Rest Day / Week)
+                <span className="block text-sm font-medium text-[var(--text-primary)]">
+                  Sabbath grace day (1 rest day per week)
                 </span>
-                <span className="block text-xs text-[var(--text-secondary)]">
+                <span className="mt-0.5 block text-xs text-[var(--text-secondary)]">
                   Preserves your reading streak if you miss up to one day in a 7-day window.
                 </span>
               </div>
@@ -169,13 +198,13 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
               />
             </label>
 
-            <label className="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-3.5">
+            <label className="flex cursor-pointer items-start justify-between gap-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5">
               <div>
-                <span className="block text-sm font-semibold text-[var(--text-primary)]">
-                  Celebratory Confetti Bursts
+                <span className="block text-sm font-medium text-[var(--text-primary)]">
+                  Milestone celebrations
                 </span>
-                <span className="block text-xs text-[var(--text-secondary)]">
-                  Show warm gold particle bursts when finishing a book or unlocking major seals.
+                <span className="mt-0.5 block text-xs text-[var(--text-secondary)]">
+                  Show subtle bursts when finishing a book or unlocking major seals.
                 </span>
               </div>
               <input
@@ -191,27 +220,27 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
 
           {/* Data Backup & Sample Journey */}
           <div className="space-y-3 border-t border-[var(--border-subtle)] pt-5">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-              Data & Portability
+            <h3 className="font-display text-base font-medium text-[var(--text-primary)]">
+              Data & portability
             </h3>
 
             <div className="flex flex-wrap gap-2.5">
               <button
                 type="button"
                 onClick={handleExport}
-                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 py-2 text-xs font-semibold text-[var(--text-primary)] hover:border-[var(--border-strong)]"
+                className="inline-flex min-h-9 items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--border-strong)]"
               >
-                <Download className="h-4 w-4 text-[var(--color-sage)]" aria-hidden="true" />
-                <span>Export JSON Backup</span>
+                <Download className="h-3.5 w-3.5 text-[var(--color-sage)]" aria-hidden="true" />
+                <span>Export JSON backup</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 py-2 text-xs font-semibold text-[var(--text-primary)] hover:border-[var(--border-strong)]"
+                className="inline-flex min-h-9 items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--border-strong)]"
               >
-                <Upload className="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
-                <span>Import JSON Backup</span>
+                <Upload className="h-3.5 w-3.5 text-[var(--color-accent)]" aria-hidden="true" />
+                <span>Import JSON backup</span>
               </button>
               <input
                 ref={fileInputRef}
@@ -230,10 +259,10 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
                     setErrorMsg(null);
                   });
                 }}
-                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 py-2 text-xs font-semibold text-[var(--text-primary)] hover:border-[var(--border-strong)]"
+                className="inline-flex min-h-9 items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--border-strong)]"
               >
-                <Sparkles className="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
-                <span>Load Sample Journey</span>
+                <BookOpen className="h-3.5 w-3.5 text-[var(--color-accent)]" aria-hidden="true" />
+                <span>Load sample journey</span>
               </button>
             </div>
 
@@ -253,13 +282,13 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
                 <button
                   type="button"
                   onClick={() => setConfirmReset(true)}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-crimson)] hover:underline"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-crimson)] hover:underline"
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Reset all reading data…</span>
                 </button>
               ) : (
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--color-crimson)] bg-[var(--bg-surface)] p-3 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--color-crimson)] bg-[var(--bg-surface)] p-3 text-xs">
                   <span className="font-medium text-[var(--text-primary)]">
                     Permanently erase all logs and seals?
                   </span>
@@ -267,7 +296,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
                     <button
                       type="button"
                       onClick={() => setConfirmReset(false)}
-                      className="rounded-lg border border-[var(--border-subtle)] px-2.5 py-1 font-medium text-[var(--text-secondary)]"
+                      className="rounded border border-[var(--border-subtle)] px-2.5 py-1 font-medium text-[var(--text-secondary)]"
                     >
                       Cancel
                     </button>
@@ -276,12 +305,12 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
                       onClick={() => {
                         void resetAllData().then(() => {
                           setConfirmReset(false);
-                          setStatusMsg('All sanctuary data cleared.');
+                          setStatusMsg('All reading data cleared.');
                         });
                       }}
-                      className="rounded-lg bg-[var(--color-crimson)] px-2.5 py-1 font-semibold text-white"
+                      className="btn-danger rounded px-2.5 py-1 font-semibold"
                     >
-                      Confirm Clear
+                      Confirm clear
                     </button>
                   </div>
                 </div>

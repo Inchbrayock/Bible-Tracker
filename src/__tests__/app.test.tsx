@@ -72,4 +72,20 @@ describe('Selah Bible Sanctuary App UI', () => {
     ).toBe('dark');
     expect(localStorage.getItem('selah-color-scheme')).toBe('dark');
   });
+
+  it('renders 66 proportional canonical book spines and opens book sheets from the bar', async () => {
+    render(<App />);
+    expect(await screen.findByText(/Canonical Journey/i)).toBeInTheDocument();
+
+    const spineGroup = screen.getByRole('group', { name: /66-book canonical progress bar/i });
+    const spineButtons = spineGroup.querySelectorAll('button');
+    expect(spineButtons).toHaveLength(66);
+
+    const psalmsSpine = screen.getByRole('button', { name: /Psalms: 0 of 150 chapters read/i });
+    fireEvent.mouseEnter(psalmsSpine);
+    expect(screen.getByText(/Wisdom & Poetry/i)).toBeInTheDocument();
+
+    fireEvent.click(psalmsSpine);
+    expect(await screen.findByRole('heading', { name: 'Psalms' })).toBeInTheDocument();
+  });
 });

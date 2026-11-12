@@ -46,9 +46,9 @@ export const PlansView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Plan Cards */}
-      <div className="grid gap-3.5 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         {READING_PLANS.map((plan) => {
           const isSelected = plan.id === activePlan.id;
           return (
@@ -57,7 +57,7 @@ export const PlansView: React.FC = () => {
               type="button"
               onClick={() => void updatePreferences({ activePlanId: plan.id })}
               aria-pressed={isSelected}
-              className={`sanctuary-card relative overflow-hidden p-4 text-left transition-colors ${
+              className={`folio-sheet relative overflow-hidden p-5 text-left transition-colors ${
                 isSelected
                   ? 'border-[var(--color-accent)] ring-1 ring-[var(--color-accent)]'
                   : 'hover:border-[var(--border-strong)]'
@@ -65,25 +65,25 @@ export const PlansView: React.FC = () => {
             >
               <span
                 aria-hidden="true"
-                className="absolute inset-y-0 left-0 w-1.5"
+                className="absolute inset-y-0 left-0 w-1"
                 style={{ backgroundColor: plan.accentColor }}
               />
               <div className="pl-2">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[var(--color-accent)]">
+                  <span className="text-xs font-medium text-[var(--color-accent)]">
                     {plan.subtitle}
                   </span>
                   {isSelected && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-accent-soft)] px-2 py-0.5 text-[0.68rem] font-semibold text-[var(--color-accent)]">
+                    <span className="inline-flex items-center gap-1 rounded bg-[var(--color-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--color-accent)]">
                       <Compass className="h-3 w-3" aria-hidden="true" />
                       Active
                     </span>
                   )}
                 </div>
-                <h3 className="mt-1 font-display text-lg font-semibold text-[var(--text-primary)]">
+                <h2 className="mt-1 font-display text-xl font-medium text-[var(--text-primary)]">
                   {plan.title}
-                </h3>
-                <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">
+                </h2>
+                <p className="mt-1.5 text-xs leading-relaxed text-[var(--text-secondary)]">
                   {plan.description}
                 </p>
               </div>
@@ -93,21 +93,21 @@ export const PlansView: React.FC = () => {
       </div>
 
       {/* Active Plan Daily Schedule */}
-      <section className="sanctuary-card p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <section className="folio-sheet p-5 sm:p-7">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border-subtle)] pb-4">
           <div>
-            <h3 className="font-display text-xl font-semibold text-[var(--text-primary)]">
+            <h2 className="font-display text-2xl font-medium text-[var(--text-primary)]">
               {activePlan.title}
-            </h3>
-            <p className="text-sm text-[var(--text-secondary)] tabular-nums">
+            </h2>
+            <p className="mt-1 text-sm text-[var(--text-secondary)] tabular-nums">
               {completedDaysCount} of {activePlan.durationDays} days synced with your chapter logs
             </p>
           </div>
 
           <div className="w-full max-w-xs">
-            <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
               <div
-                className="h-full rounded-full bg-[var(--color-sage)] transition-[width] duration-500"
+                className="h-full rounded-full bg-[var(--color-sage)] transition-[width] duration-400"
                 style={{
                   width: `${(completedDaysCount / activePlan.durationDays) * 100}%`,
                 }}
@@ -116,26 +116,24 @@ export const PlansView: React.FC = () => {
           </div>
         </div>
 
-        <ul className="mt-5 divide-y divide-[var(--border-subtle)] rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+        <ul className="mt-5 divide-y divide-[var(--border-subtle)] rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
           {visibleDays.map(({ day, done }) => (
             <li
               key={day.day}
-              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3.5">
                 <span
-                  className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums ${
+                  className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums ${
                     done
                       ? 'bg-[var(--color-sage-soft)] text-[var(--color-sage)]'
-                      : 'bg-[var(--bg-elevated)] text-[var(--text-secondary)]'
+                      : 'border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)]'
                   }`}
                 >
                   {done ? <Check className="h-4 w-4" aria-hidden="true" /> : day.day}
                 </span>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-                    Day {day.day}
-                  </p>
+                  <p className="text-xs font-medium text-[var(--text-secondary)]">Day {day.day}</p>
                   <p className="font-display text-base font-medium text-[var(--text-primary)]">
                     {day.title}
                   </p>
@@ -143,7 +141,7 @@ export const PlansView: React.FC = () => {
               </div>
 
               {done ? (
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--color-sage)]">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-sage)]">
                   <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                   Completed
                 </span>
@@ -151,7 +149,7 @@ export const PlansView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => void handleCompletePlanDay(day.day)}
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[var(--color-accent)] px-3.5 py-1.5 text-xs font-semibold text-white hover:opacity-95"
+                  className="btn-primary inline-flex min-h-9 items-center rounded-md px-3.5 py-1.5 text-xs font-medium hover:opacity-90"
                 >
                   Log Day {day.day}
                 </button>

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { motion } from 'motion/react';
-import { Award, Lock, Sparkles } from 'lucide-react';
+import { Check, Lock } from 'lucide-react';
 import { formatPlainDate } from '../../lib/dates';
 import { useBibleStore } from '../../store/useBibleStore';
 import type { AchievementCategory, AchievementStatus, AchievementTier } from '../../types/bible';
@@ -11,15 +10,22 @@ interface AchievementsViewProps {
 }
 
 const CATEGORIES: { id: 'all' | AchievementCategory; label: string }[] = [
-  { id: 'all', label: 'All Seals' },
+  { id: 'all', label: 'All seals' },
   { id: 'milestones', label: 'Milestones' },
-  { id: 'divisions', label: 'Books & Divisions' },
+  { id: 'divisions', label: 'Books & divisions' },
   { id: 'consistency', label: 'Consistency' },
   { id: 'habits', label: 'Habits' },
-  { id: 'special', label: 'Secret Seals' },
+  { id: 'special', label: 'Secret seals' },
 ];
 
 const TIER_ORDER: AchievementTier[] = ['bronze', 'silver', 'gold', 'luminous'];
+
+const TIER_NAMES: Record<AchievementTier, string> = {
+  bronze: 'Bronze',
+  silver: 'Silver',
+  gold: 'Gold',
+  luminous: 'Luminous',
+};
 
 export const AchievementsView: React.FC<AchievementsViewProps> = ({
   onInspectAchievement,
@@ -52,32 +58,23 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
   }, [achievements, category, onlyUnlocked]);
 
   return (
-    <div className="space-y-6">
-      <section className="sanctuary-card p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-8">
+      <section className="border-b border-[var(--border-subtle)] pb-6">
+        <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--color-accent)]">
-              <Award className="h-4 w-4" aria-hidden="true" />
-              <span>Illuminated Hall of Seals</span>
-            </div>
-            <h1 className="mt-1 font-display text-2xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-3xl">
-              {unlockedCount} of {achievements.length} Seals Earned
+            <h1 className="font-display text-3xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[2.15rem]">
+              Illuminated Hall of Seals
             </h1>
-            <p className="text-sm text-[var(--text-secondary)]">
-              Click any medallion to inspect its Scripture echo, 3D relief, and progress.
+            <p className="mt-1 text-sm text-[var(--text-secondary)] tabular-nums">
+              {unlockedCount} of {achievements.length} seals earned. Select any medallion to inspect its Scripture echo and progress.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-4 divide-x divide-[var(--border-subtle)] rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
             {tierStats.map((t) => (
-              <div
-                key={t.tier}
-                className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-2 text-center"
-              >
-                <p className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-                  {t.tier}
-                </p>
-                <p className="mt-0.5 font-display text-base font-semibold tabular-nums text-[var(--text-primary)]">
+              <div key={t.tier} className="px-3.5 py-2 text-center">
+                <p className="text-xs text-[var(--text-secondary)]">{TIER_NAMES[t.tier]}</p>
+                <p className="mt-0.5 font-display text-base font-medium tabular-nums text-[var(--text-primary)]">
                   {t.earned}/{t.total}
                 </p>
               </div>
@@ -85,7 +82,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
           </div>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-4">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-1.5">
             {CATEGORIES.map((cat) => (
               <button
@@ -93,10 +90,10 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
                 type="button"
                 onClick={() => setCategory(cat.id)}
                 aria-pressed={category === cat.id}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
                   category === cat.id
                     ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-                    : 'border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 {cat.label}
@@ -117,8 +114,8 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
       </section>
 
       {filtered.length === 0 ? (
-        <div className="sanctuary-card p-8 text-center">
-          <p className="font-display text-lg font-semibold text-[var(--text-primary)]">
+        <div className="folio-sheet p-10 text-center">
+          <p className="font-display text-xl font-medium text-[var(--text-primary)]">
             No seals match this filter yet
           </p>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -127,52 +124,47 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((item, idx) => {
+          {filtered.map((item) => {
             const isHidden = Boolean(item.definition.secret && !item.unlocked);
             return (
-              <motion.button
+              <button
                 key={item.definition.id}
                 type="button"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25, delay: Math.min(idx * 0.025, 0.3) }}
-                whileHover={{ y: -3 }}
-                whileTap={{ scale: 0.985 }}
                 onClick={() => onInspectAchievement(item)}
-                className={`sanctuary-card sheen-overlay flex items-start gap-4 p-4 text-left transition-colors ${
+                className={`folio-sheet flex items-start gap-4 p-4 text-left transition-colors ${
                   item.unlocked
-                    ? 'border-[color-mix(in_oklab,var(--color-accent)_45%,var(--border-subtle))]'
-                    : 'opacity-85 hover:opacity-100'
+                    ? 'border-[color-mix(in_oklab,var(--color-accent)_48%,var(--border-subtle))] hover:border-[var(--color-accent)]'
+                    : 'opacity-85 hover:border-[var(--border-strong)] hover:opacity-100'
                 }`}
               >
                 <MedallionIcon
                   motif={item.definition.motif}
                   tier={item.definition.tier}
                   unlocked={item.unlocked}
-                  size={66}
+                  size={60}
                 />
 
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1 text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--color-accent)]">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="inline-flex items-center gap-1 font-medium text-[var(--color-accent)]">
                       {item.unlocked ? (
-                        <Sparkles className="h-3 w-3" aria-hidden="true" />
+                        <Check className="h-3 w-3 text-[var(--color-sage)]" aria-hidden="true" />
                       ) : (
                         <Lock className="h-3 w-3 text-[var(--text-secondary)]" aria-hidden="true" />
                       )}
-                      {item.definition.tier}
+                      {TIER_NAMES[item.definition.tier]}
                     </span>
                     {item.unlocked && item.unlockedAt ? (
-                      <span className="text-[0.68rem] font-medium tabular-nums text-[var(--color-sage)]">
+                      <span className="tabular-nums text-[var(--color-sage)]">
                         {formatPlainDate(item.unlockedAt, { month: 'short', day: 'numeric' })}
                       </span>
                     ) : null}
                   </div>
 
-                  <h2 className="mt-0.5 font-display text-lg font-semibold leading-snug text-[var(--text-primary)]">
+                  <h2 className="mt-1 font-display text-lg font-medium leading-snug text-[var(--text-primary)]">
                     {isHidden ? 'Hidden Sanctuary Seal' : item.definition.title}
                   </h2>
-                  <p className="mt-0.5 text-xs text-[var(--text-secondary)]">
+                  <p className="mt-0.5 text-xs leading-relaxed text-[var(--text-secondary)]">
                     {isHidden
                       ? 'Secret milestone waiting to be discovered.'
                       : item.definition.subtitle}
@@ -180,15 +172,15 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
 
                   {!isHidden && (
                     <div className="mt-3">
-                      <div className="flex items-center justify-between text-[0.7rem] font-medium tabular-nums text-[var(--text-secondary)]">
-                        <span>{item.unlocked ? 'Unlocked' : 'Progress'}</span>
+                      <div className="flex items-center justify-between text-xs tabular-nums text-[var(--text-secondary)]">
+                        <span>{item.unlocked ? 'Earned' : 'Progress'}</span>
                         <span>
                           {item.current.toLocaleString()} / {item.target.toLocaleString()}
                         </span>
                       </div>
-                      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
+                      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
                         <div
-                          className="h-full rounded-full transition-[width] duration-500"
+                          className="h-full rounded-full transition-[width] duration-400"
                           style={{
                             width: `${item.percentage}%`,
                             backgroundColor: item.unlocked
@@ -200,7 +192,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
                     </div>
                   )}
                 </div>
-              </motion.button>
+              </button>
             );
           })}
         </div>

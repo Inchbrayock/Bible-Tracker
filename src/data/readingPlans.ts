@@ -51,7 +51,7 @@ function buildSequentialPlanDays(
                 ? `${g.bookName} ${g.chapters[0]}`
                 : `${g.bookName} ${g.chapters[0]}–${g.chapters[g.chapters.length - 1]}`
             )
-            .join(' · ');
+            .join(', ');
 
     days.push({
       day,
@@ -76,7 +76,7 @@ function buildPsalmsProverbs31Days(): ReadingPlanDay[] {
 
     days.push({
       day,
-      title: `Psalms ${firstP}–${lastP} · Proverbs ${day}`,
+      title: `Psalms ${firstP}–${lastP}, Proverbs ${day}`,
       assignments: [
         { bookId: 'psalms', chapters: psalmChapters },
         { bookId: 'proverbs', chapters: [day] },
@@ -95,7 +95,7 @@ export const READING_PLANS: ReadingPlan[] = [
   {
     id: 'gospels-acts-45',
     title: 'Gospels & Acts Journey',
-    subtitle: '45 Days · 2–3 Chapters / Day',
+    subtitle: '45 days, 2–3 chapters daily',
     durationDays: 45,
     accentColor: 'var(--div-gospels)',
     description:
@@ -105,17 +105,17 @@ export const READING_PLANS: ReadingPlan[] = [
   {
     id: 'psalms-proverbs-31',
     title: 'Psalms & Proverbs Month',
-    subtitle: '31 Days · Prayer & Wisdom',
+    subtitle: '31 days, prayer and wisdom',
     durationDays: 31,
     accentColor: 'var(--div-wisdom)',
     description:
-      'Read one Proverb and four to five Psalms every day for a month—completing all 150 Psalms and 31 Proverbs.',
+      'Read one Proverb and four to five Psalms every day for a month, completing all 150 Psalms and 31 Proverbs.',
     days: buildPsalmsProverbs31Days(),
   },
   {
     id: 'nt-90',
     title: 'New Testament in 90 Days',
-    subtitle: '90 Days · ~3 Chapters / Day',
+    subtitle: '90 days, ~3 chapters daily',
     durationDays: 90,
     accentColor: 'var(--div-pauline)',
     description:
@@ -125,7 +125,7 @@ export const READING_PLANS: ReadingPlan[] = [
   {
     id: 'canonical-365',
     title: 'Canonical Bible in 1 Year',
-    subtitle: '365 Days · 3–4 Chapters / Day',
+    subtitle: '365 days, 3–4 chapters daily',
     durationDays: 365,
     accentColor: 'var(--color-accent)',
     description:

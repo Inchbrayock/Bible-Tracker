@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { LayoutGrid, Grid3x3, Search } from 'lucide-react';
+import { Grid3x3, LayoutGrid, Search } from 'lucide-react';
 import { BIBLE_BOOKS, DIVISIONS } from '../../data/bibleCanon';
 import { useBibleStore } from '../../store/useBibleStore';
 import type { BibleDivision, Testament } from '../../types/bible';
@@ -53,22 +53,31 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
     });
   }, [division, query, status, summary.bookProgressById, testament]);
 
+  const otFiltered = useMemo(
+    () => filteredBooks.filter((b) => b.testament === 'OT'),
+    [filteredBooks]
+  );
+  const ntFiltered = useMemo(
+    () => filteredBooks.filter((b) => b.testament === 'NT'),
+    [filteredBooks]
+  );
+
   return (
-    <div className="space-y-6">
-      {/* Header & View Mode Switcher */}
-      <section className="sanctuary-card p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-8">
+      {/* Page Header & Filter Controls */}
+      <section className="border-b border-[var(--border-subtle)] pb-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="font-display text-2xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-3xl">
+            <h1 className="font-display text-3xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[2.15rem]">
               Scripture Library
             </h1>
-            <p className="text-sm text-[var(--text-secondary)]">
-              66 books · {summary.booksCompleted} completed · {summary.totalChaptersRead.toLocaleString()} of 1,189 chapters read
+            <p className="mt-1 text-sm text-[var(--text-secondary)] tabular-nums">
+              {summary.booksCompleted} of 66 books completed, {summary.totalChaptersRead.toLocaleString()} of 1,189 chapters read
             </p>
           </div>
 
           <div
-            className="inline-flex rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1"
+            className="inline-flex rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5"
             role="group"
             aria-label="Library view mode"
           >
@@ -76,10 +85,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
               type="button"
               onClick={() => setViewMode('bookshelf')}
               aria-pressed={viewMode === 'bookshelf'}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors ${
                 viewMode === 'bookshelf'
-                  ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-xs'
-                  : 'text-[var(--text-secondary)]'
+                  ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               <LayoutGrid className="h-4 w-4" aria-hidden="true" />
@@ -89,10 +98,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
               type="button"
               onClick={() => setViewMode('mosaic')}
               aria-pressed={viewMode === 'mosaic'}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors ${
                 viewMode === 'mosaic'
-                  ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-xs'
-                  : 'text-[var(--text-secondary)]'
+                  ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               <Grid3x3 className="h-4 w-4" aria-hidden="true" />
@@ -102,10 +111,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
         </div>
 
         {viewMode === 'bookshelf' && (
-          <div className="mt-5 space-y-3 border-t border-[var(--border-subtle)] pt-4">
+          <div className="mt-6 space-y-4">
             <div className="flex flex-wrap items-center gap-3">
               {/* Search */}
-              <div className="relative min-w-52 flex-1">
+              <div className="relative min-w-56 flex-1">
                 <Search
                   className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]"
                   aria-hidden="true"
@@ -115,13 +124,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   aria-label="Search Bible books"
-                  placeholder="Search book or theme (e.g. Psalms, Grace, Rom)…"
-                  className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]"
+                  placeholder="Search book or theme (for example, Psalms, Grace, Rom)…"
+                  className="folio-input w-full py-2 pl-9 pr-3 text-sm placeholder:text-[var(--text-secondary)]"
                 />
               </div>
 
               {/* Testament */}
-              <div className="inline-flex rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1 text-xs font-semibold">
+              <div className="inline-flex rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5 text-xs font-medium">
                 {(['ALL', 'OT', 'NT'] as const).map((t) => (
                   <button
                     key={t}
@@ -131,10 +140,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
                       setDivision('ALL');
                     }}
                     aria-pressed={testament === t}
-                    className={`rounded-lg px-3 py-1.5 transition-colors ${
+                    className={`rounded-[4px] px-3 py-1.5 transition-colors ${
                       testament === t
                         ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
-                        : 'text-[var(--text-secondary)]'
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {t === 'ALL' ? 'All (66)' : t === 'OT' ? 'Old (39)' : 'New (27)'}
@@ -147,10 +156,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
                 aria-label="Filter books by completion status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as StatusFilter)}
-                className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-2 text-xs font-semibold text-[var(--text-primary)]"
+                className="folio-input px-3 py-2 text-xs font-medium"
               >
-                <option value="all">All Statuses</option>
-                <option value="in-progress">In Progress</option>
+                <option value="all">All statuses</option>
+                <option value="in-progress">In progress</option>
                 <option value="completed">Completed</option>
                 <option value="unread">Unread</option>
               </select>
@@ -162,13 +171,13 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
                 type="button"
                 onClick={() => setDivision('ALL')}
                 aria-pressed={division === 'ALL'}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
                   division === 'ALL'
                     ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-                    : 'border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
                 }`}
               >
-                All Divisions
+                All divisions
               </button>
               {availableDivisions.map((div) => (
                 <button
@@ -176,10 +185,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
                   type="button"
                   onClick={() => setDivision(div.id)}
                   aria-pressed={division === div.id}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
                     division === div.id
                       ? 'border-[var(--text-primary)] bg-[var(--bg-elevated)] text-[var(--text-primary)]'
-                      : 'border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   <span
@@ -198,23 +207,65 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
       {viewMode === 'mosaic' ? (
         <WholeBibleMosaic onSelectBook={onOpenBook} />
       ) : filteredBooks.length === 0 ? (
-        <div className="sanctuary-card p-8 text-center">
-          <p className="font-display text-lg font-semibold text-[var(--text-primary)]">
+        <div className="folio-sheet p-10 text-center">
+          <p className="font-display text-xl font-medium text-[var(--text-primary)]">
             No matching books found
           </p>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Try clearing your search or status filter.
+            Clear your search or choose another status filter.
           </p>
         </div>
       ) : (
-        <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredBooks.map((book) => (
-            <BookCard
-              key={book.id}
-              progress={summary.bookProgressById[book.id]}
-              onSelect={onOpenBook}
-            />
-          ))}
+        <div className="space-y-10">
+          {otFiltered.length > 0 && (
+            <section aria-labelledby="ot-section-heading">
+              <div className="mb-4 flex items-baseline justify-between border-b border-[var(--border-subtle)] pb-2">
+                <h2
+                  id="ot-section-heading"
+                  className="font-display text-xl font-medium text-[var(--text-primary)]"
+                >
+                  Old Testament
+                </h2>
+                <span className="text-xs text-[var(--text-secondary)] tabular-nums">
+                  {otFiltered.length} {otFiltered.length === 1 ? 'book' : 'books'}
+                </span>
+              </div>
+              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {otFiltered.map((book) => (
+                  <BookCard
+                    key={book.id}
+                    progress={summary.bookProgressById[book.id]}
+                    onSelect={onOpenBook}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {ntFiltered.length > 0 && (
+            <section aria-labelledby="nt-section-heading">
+              <div className="mb-4 flex items-baseline justify-between border-b border-[var(--border-subtle)] pb-2">
+                <h2
+                  id="nt-section-heading"
+                  className="font-display text-xl font-medium text-[var(--text-primary)]"
+                >
+                  New Testament
+                </h2>
+                <span className="text-xs text-[var(--text-secondary)] tabular-nums">
+                  {ntFiltered.length} {ntFiltered.length === 1 ? 'book' : 'books'}
+                </span>
+              </div>
+              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {ntFiltered.map((book) => (
+                  <BookCard
+                    key={book.id}
+                    progress={summary.bookProgressById[book.id]}
+                    onSelect={onOpenBook}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       )}
     </div>

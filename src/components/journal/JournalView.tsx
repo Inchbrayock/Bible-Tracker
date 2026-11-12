@@ -62,29 +62,29 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
   };
 
   return (
-    <div className="space-y-6">
-      <section className="sanctuary-card p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="space-y-8">
+      <section className="border-b border-[var(--border-subtle)] pb-6">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="font-display text-2xl font-semibold tracking-tight text-[var(--text-primary)] sm:text-3xl">
+            <h1 className="font-display text-3xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[2.15rem]">
               {subTab === 'journal' ? 'Reading Journal' : 'Guided Reading Plans'}
             </h1>
-            <p className="text-sm text-[var(--text-secondary)]">
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
               {subTab === 'journal'
                 ? `${logs.length} reading sessions recorded with notes and calendar dates.`
                 : 'Follow a structured path or let your free-form reading automatically mark days complete.'}
             </p>
           </div>
 
-          <div className="inline-flex rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1">
+          <div className="inline-flex rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5">
             <button
               type="button"
               onClick={() => setSubTab('journal')}
               aria-pressed={subTab === 'journal'}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ${
+              className={`inline-flex items-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors ${
                 subTab === 'journal'
-                  ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-xs'
-                  : 'text-[var(--text-secondary)]'
+                  ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               <ScrollText className="h-4 w-4" aria-hidden="true" />
@@ -94,10 +94,10 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
               type="button"
               onClick={() => setSubTab('plans')}
               aria-pressed={subTab === 'plans'}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ${
+              className={`inline-flex items-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors ${
                 subTab === 'plans'
-                  ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-xs'
-                  : 'text-[var(--text-secondary)]'
+                  ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               <Compass className="h-4 w-4" aria-hidden="true" />
@@ -107,7 +107,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
         </div>
 
         {subTab === 'journal' && (
-          <div className="relative mt-4">
+          <div className="relative mt-5 max-w-xl">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]"
               aria-hidden="true"
@@ -118,7 +118,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Filter reading journal"
               placeholder="Search logs by book, reflection note, or date (YYYY-MM-DD)…"
-              className="w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] py-2 pl-9 pr-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]"
+              className="folio-input w-full py-2 pl-9 pr-3 text-sm placeholder:text-[var(--text-secondary)]"
             />
           </div>
         )}
@@ -127,8 +127,8 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
       {subTab === 'plans' ? (
         <PlansView />
       ) : sortedLogs.length === 0 ? (
-        <div className="sanctuary-card p-8 text-center">
-          <p className="font-display text-lg font-semibold text-[var(--text-primary)]">
+        <div className="folio-sheet p-10 text-center">
+          <p className="font-display text-xl font-medium text-[var(--text-primary)]">
             {logs.length === 0 ? 'Your journal awaits its first entry' : 'No matching entries'}
           </p>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -138,7 +138,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
           </p>
         </div>
       ) : (
-        <ul className="space-y-3">
+        <ul className="folio-sheet divide-y divide-[var(--border-subtle)] overflow-hidden">
           {sortedLogs.map((log) => {
             const book = BOOKS_BY_ID[log.bookId];
             if (!book) return null;
@@ -146,54 +146,52 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
             const isEditing = editingId === log.id;
 
             return (
-              <li key={log.id} className="sanctuary-card relative overflow-hidden p-4 sm:p-5">
+              <li key={log.id} className="relative p-5 sm:px-7 sm:py-5">
                 <span
                   aria-hidden="true"
-                  className="absolute inset-y-0 left-0 w-1.5"
+                  className="absolute inset-y-4 left-0 w-1 rounded-r-full"
                   style={{ backgroundColor: divMeta.colorVar }}
                 />
 
                 {isEditing ? (
-                  <div className="space-y-3 pl-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h2 className="font-display text-lg font-semibold text-[var(--text-primary)]">
-                        Edit {book.name} Entry
-                      </h2>
-                    </div>
+                  <div className="space-y-3 pl-3">
+                    <h2 className="font-display text-lg font-medium text-[var(--text-primary)]">
+                      Edit {book.name} entry
+                    </h2>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
-                        <label className="block text-xs font-semibold text-[var(--text-secondary)]">
+                        <label className="block text-xs font-medium text-[var(--text-secondary)]">
                           Chapters
                         </label>
                         <input
                           type="text"
                           value={editChapters}
                           onChange={(e) => setEditChapters(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-1.5 text-sm"
+                          className="folio-input mt-1 w-full px-3 py-1.5 text-sm"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-semibold text-[var(--text-secondary)]">
-                          Date Read
+                        <label className="block text-xs font-medium text-[var(--text-secondary)]">
+                          Date read
                         </label>
                         <input
                           type="date"
                           value={editDate}
                           max={todayPlainDate()}
                           onChange={(e) => setEditDate(e.target.value)}
-                          className="mt-1 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-1.5 text-sm"
+                          className="folio-input mt-1 w-full px-3 py-1.5 text-sm"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-[var(--text-secondary)]">
-                        Reflection Note
+                      <label className="block text-xs font-medium text-[var(--text-secondary)]">
+                        Reflection note
                       </label>
                       <input
                         type="text"
                         value={editNote}
                         onChange={(e) => setEditNote(e.target.value)}
-                        className="mt-1 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-1.5 text-sm"
+                        className="folio-input mt-1 w-full px-3 py-1.5 text-sm"
                       />
                     </div>
                     {editError ? (
@@ -205,28 +203,27 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
                       <button
                         type="button"
                         onClick={() => void saveEdit(log)}
-                        className="rounded-lg bg-[var(--color-sage)] px-3 py-1.5 text-xs font-semibold text-white"
+                        className="btn-sage rounded-md px-3.5 py-1.5 text-xs font-medium"
                       >
-                        Save Changes
+                        Save changes
                       </button>
                       <button
                         type="button"
                         onClick={() => setEditingId(null)}
-                        className="rounded-lg border border-[var(--border-subtle)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)]"
+                        className="rounded-md border border-[var(--border-subtle)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                       >
                         Cancel
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-wrap items-start justify-between gap-3 pl-2">
+                  <div className="flex flex-wrap items-start justify-between gap-4 pl-3">
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
-                        <span className="inline-flex items-center gap-1 font-medium tabular-nums">
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-secondary)]">
+                        <span className="inline-flex items-center gap-1.5 font-medium tabular-nums">
                           <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
                           {formatPlainDate(log.readDate)}
                         </span>
-                        <span>·</span>
                         <span className="tabular-nums">
                           {log.chapters.length}{' '}
                           {log.chapters.length === 1 ? 'chapter' : 'chapters'}
@@ -236,30 +233,33 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
                       <button
                         type="button"
                         onClick={() => onOpenBook(book.id)}
-                        className="mt-1 font-display text-lg font-semibold text-[var(--text-primary)] hover:text-[var(--color-accent)] hover:underline"
+                        className="mt-1 font-display text-xl font-medium text-[var(--text-primary)] hover:text-[var(--color-accent)] hover:underline"
                       >
                         {book.name} {formatChapterRanges(log.chapters)}
                       </button>
 
                       {log.note ? (
-                        <p className="mt-1.5 rounded-xl bg-[var(--bg-surface)] px-3 py-2 text-sm italic text-[var(--text-secondary)]">
-                          “{log.note}”
-                        </p>
+                        <blockquote
+                          className="mt-2 max-w-[65ch] border-l-2 pl-3 font-display text-[0.98rem] italic leading-relaxed text-[var(--text-secondary)]"
+                          style={{ borderColor: divMeta.colorVar }}
+                        >
+                          {log.note}
+                        </blockquote>
                       ) : null}
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex shrink-0 items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => startEditing(log)}
                         aria-label={`Edit ${book.name} log`}
-                        className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
                       >
                         <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
 
                       {confirmDeleteId === log.id ? (
-                        <div className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-crimson)] px-2 py-1 text-xs">
+                        <div className="inline-flex items-center gap-2 rounded-md border border-[var(--color-crimson)] px-2.5 py-1 text-xs">
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteId(null)}
@@ -283,7 +283,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
                           type="button"
                           onClick={() => setConfirmDeleteId(log.id)}
                           aria-label={`Delete ${book.name} log`}
-                          className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:border-[var(--color-crimson)] hover:text-[var(--color-crimson)]"
+                          className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:border-[var(--color-crimson)] hover:text-[var(--color-crimson)]"
                         >
                           <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                         </button>

@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { motion } from 'motion/react';
-import { BookMarked, Check, Plus, Sparkles } from 'lucide-react';
+import { BookMarked, Check, Plus } from 'lucide-react';
 import { BIBLE_BOOKS, BOOKS_BY_ID } from '../../data/bibleCanon';
 import { todayPlainDate } from '../../lib/dates';
 import { parseChapterInput } from '../../lib/progress';
@@ -62,7 +61,7 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
     const expr = chaptersText.trim() || String(nextChapter);
     const parsed = parseChapterInput(expr, selectedBook.chapterCount);
     if (parsed.length === 0) {
-      setError(`Enter chapter numbers between 1 and ${selectedBook.chapterCount} (e.g. 1-3 or 5).`);
+      setError(`Enter chapter numbers between 1 and ${selectedBook.chapterCount} (for example, 1-3 or 5).`);
       return;
     }
 
@@ -82,38 +81,37 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
   const ntBooks = BIBLE_BOOKS.filter((b) => b.testament === 'NT');
 
   return (
-    <section className="sanctuary-card p-5 sm:p-6" aria-labelledby="quick-log-heading">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section className="folio-sheet p-5 sm:p-7" aria-labelledby="quick-log-heading">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border-subtle)] pb-5">
         <div>
           <h2
             id="quick-log-heading"
-            className="font-display text-xl font-semibold text-[var(--text-primary)]"
+            className="font-display text-2xl font-medium text-[var(--text-primary)]"
           >
             Log a Reading
           </h2>
-          <p className="text-sm text-[var(--text-secondary)]">
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
             Record today’s chapters or backdate an earlier session.
           </p>
         </div>
 
-        <motion.button
+        <button
           type="button"
-          whileTap={{ scale: 0.97 }}
           onClick={() => void handleOneClickNext()}
-          className="sheen-overlay inline-flex min-h-10 items-center gap-2 rounded-xl bg-[var(--color-accent)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-95"
+          className="btn-primary inline-flex min-h-10 items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-opacity hover:opacity-90"
         >
-          <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>
             Quick Log: {continueTarget.book.shortName} {continueTarget.chapter}
           </span>
-        </motion.button>
+        </button>
       </div>
 
-      <form onSubmit={(e) => void handleSubmit(e)} className="mt-5 grid gap-4 sm:grid-cols-12">
+      <form onSubmit={(e) => void handleSubmit(e)} className="mt-6 grid gap-4 sm:grid-cols-12">
         <div className="sm:col-span-5">
           <label
             htmlFor="quick-book-select"
-            className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]"
+            className="block text-xs font-medium text-[var(--text-secondary)]"
           >
             Book
           </label>
@@ -124,7 +122,7 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
               setBookId(e.target.value);
               setError(null);
             }}
-            className="mt-1.5 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-2.5 text-sm font-medium text-[var(--text-primary)]"
+            className="folio-input mt-1.5 w-full px-3 py-2 text-sm font-medium"
           >
             <optgroup label="Old Testament">
               {otBooks.map((b) => (
@@ -146,9 +144,9 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
         <div className="sm:col-span-4">
           <label
             htmlFor="quick-chapters-input"
-            className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]"
+            className="block text-xs font-medium text-[var(--text-secondary)]"
           >
-            Chapter(s)
+            Chapters
           </label>
           <input
             id="quick-chapters-input"
@@ -160,19 +158,19 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
             }}
             placeholder={`Next: ${nextChapter} (or 1-4)`}
             aria-describedby="quick-chapters-hint"
-            className="mt-1.5 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]"
+            className="folio-input mt-1.5 w-full px-3 py-2 text-sm placeholder:text-[var(--text-secondary)]"
           />
-          <p id="quick-chapters-hint" className="mt-1 text-[0.72rem] text-[var(--text-secondary)]">
-            Single, list, or range up to ch. {selectedBook.chapterCount}
+          <p id="quick-chapters-hint" className="mt-1 text-xs text-[var(--text-secondary)]">
+            Range or list up to ch. {selectedBook.chapterCount}
           </p>
         </div>
 
         <div className="sm:col-span-3">
           <label
             htmlFor="quick-date-input"
-            className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]"
+            className="block text-xs font-medium text-[var(--text-secondary)]"
           >
-            Date Read
+            Date read
           </label>
           <input
             id="quick-date-input"
@@ -180,16 +178,16 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
             value={readDate}
             max={todayPlainDate()}
             onChange={(e) => setReadDate(e.target.value)}
-            className="mt-1.5 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-2.5 text-sm text-[var(--text-primary)]"
+            className="folio-input mt-1.5 w-full px-3 py-2 text-sm"
           />
         </div>
 
         <div className="sm:col-span-9">
           <label
             htmlFor="quick-note-input"
-            className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]"
+            className="block text-xs font-medium text-[var(--text-secondary)]"
           >
-            Reflection or Key Verse (Optional)
+            Reflection or key verse (optional)
           </label>
           <input
             id="quick-note-input"
@@ -197,15 +195,14 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="What stood out in today’s passage?"
-            className="mt-1.5 w-full rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]"
+            className="folio-input mt-1.5 w-full px-3 py-2 text-sm placeholder:text-[var(--text-secondary)]"
           />
         </div>
 
-        <div className="flex items-end gap-2 sm:col-span-3">
-          <motion.button
+        <div className="flex items-end sm:col-span-3">
+          <button
             type="submit"
-            whileTap={{ scale: 0.97 }}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[var(--color-sage)] px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-95"
+            className="btn-sage inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
           >
             {justLogged ? (
               <>
@@ -218,18 +215,18 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
                 <span>Log Passage</span>
               </>
             )}
-          </motion.button>
+          </button>
         </div>
       </form>
 
       {error ? (
-        <p role="alert" className="mt-2.5 text-xs font-medium text-[var(--color-crimson)]">
+        <p role="alert" className="mt-3 text-xs font-medium text-[var(--color-crimson)]">
           {error}
         </p>
       ) : null}
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-subtle)] pt-3 text-xs text-[var(--text-secondary)]">
-        <span>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-subtle)] pt-4 text-xs text-[var(--text-secondary)]">
+        <span className="tabular-nums">
           {selectedBook.name}: {selectedProgress?.readChapters ?? 0} of {selectedBook.chapterCount}{' '}
           chapters read
         </span>
@@ -237,7 +234,7 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
           <button
             type="button"
             onClick={() => onOpenBook(selectedBook.id)}
-            className="inline-flex items-center gap-1 font-semibold text-[var(--color-accent)] hover:underline"
+            className="inline-flex items-center gap-1.5 font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
           >
             <BookMarked className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Open {selectedBook.name} chapter grid</span>

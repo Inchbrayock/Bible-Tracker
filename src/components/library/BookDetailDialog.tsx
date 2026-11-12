@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'motion/react';
-import {
-  Check,
-  CheckCheck,
-  RotateCw,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { Check, CheckCheck, RotateCw, Trash2, X } from 'lucide-react';
 import { BOOKS_BY_ID, DIVISION_META_BY_ID } from '../../data/bibleCanon';
 import { formatPlainDate, todayPlainDate } from '../../lib/dates';
 import { useBibleStore } from '../../store/useBibleStore';
@@ -49,7 +42,6 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
   ) => {
     if (!book) return;
 
-    // Shift+Click logs the contiguous range between the last clicked chapter and this one
     if (e.shiftKey && lastAnchorChapter !== null) {
       const start = Math.min(lastAnchorChapter, chapter);
       const end = Math.max(lastAnchorChapter, chapter);
@@ -93,40 +85,38 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
       {book && bp && divMeta ? (
         <div className="flex max-h-[88dvh] flex-col">
           {/* Header */}
-          <div className="relative border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-5 py-4 sm:px-6">
+          <div className="relative border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-5 py-5 sm:px-6">
             <span
               aria-hidden="true"
-              className="absolute inset-y-0 left-0 w-2"
+              className="absolute inset-y-0 left-0 w-1.5"
               style={{ backgroundColor: divMeta.colorVar }}
             />
             <div className="flex items-start justify-between gap-4 pl-2">
               <div>
-                <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+                <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
                   <span>{book.testament === 'OT' ? 'Old Testament' : 'New Testament'}</span>
-                  <span>·</span>
+                  <span aria-hidden="true">/</span>
                   <span>{divMeta.label}</span>
                   {bp.completedCycles >= 2 && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--color-accent-soft)] px-2 py-0.5 text-[0.68rem] text-[var(--color-accent)]">
+                    <span className="inline-flex items-center gap-1 rounded bg-[var(--color-lamp-soft)] px-2 py-0.5 text-xs font-semibold text-[var(--color-lamp)] tabular-nums">
                       <RotateCw className="h-3 w-3" aria-hidden="true" />
-                      {bp.completedCycles}× Read-Throughs
+                      {bp.completedCycles}× read-throughs
                     </span>
                   )}
                 </div>
                 <h2
                   id="book-detail-title"
-                  className="mt-1 font-display text-2xl font-semibold text-[var(--text-primary)] sm:text-3xl"
+                  className="mt-1 font-display text-3xl font-medium text-[var(--text-primary)]"
                 >
                   {book.name}
                 </h2>
-                <p className="mt-0.5 text-xs text-[var(--text-secondary)] sm:text-sm">
-                  {book.theme}
-                </p>
+                <p className="mt-1 text-sm text-[var(--text-secondary)]">{book.theme}</p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
                 aria-label={`Close ${book.name} sheet`}
-                className="inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -134,7 +124,7 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
 
             {/* Progress Bar */}
             <div className="mt-4 pl-2">
-              <div className="flex items-center justify-between text-xs font-semibold tabular-nums">
+              <div className="flex items-center justify-between text-xs font-medium tabular-nums">
                 <span className="text-[var(--text-primary)]">
                   {bp.readChapters} of {bp.totalChapters} chapters read ({Math.round(bp.percentage)}%)
                 </span>
@@ -143,16 +133,14 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
                     Next unread: Ch. {bp.nextUnreadChapter}
                   </span>
                 ) : (
-                  <span className="text-[var(--color-sage)]">Book Complete</span>
+                  <span className="text-[var(--color-sage)]">Book complete</span>
                 )}
               </div>
-              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
-                <motion.div
-                  className="h-full rounded-full"
-                  initial={false}
-                  animate={{ width: `${bp.percentage}%` }}
-                  transition={{ duration: 0.4 }}
+              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
+                <div
+                  className="h-full rounded-full transition-[width] duration-300"
                   style={{
+                    width: `${bp.percentage}%`,
                     backgroundColor: bp.completed ? 'var(--color-sage)' : divMeta.colorVar,
                   }}
                 />
@@ -166,9 +154,9 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
               <div>
                 <label
                   htmlFor="sheet-date-input"
-                  className="block text-[0.68rem] font-semibold uppercase tracking-wider text-[var(--text-secondary)]"
+                  className="block text-xs font-medium text-[var(--text-secondary)]"
                 >
-                  Log Date
+                  Log date
                 </label>
                 <input
                   id="sheet-date-input"
@@ -176,20 +164,20 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
                   value={readDate}
                   max={todayPlainDate()}
                   onChange={(e) => setReadDate(e.target.value)}
-                  className="mt-1 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)]"
+                  className="folio-input mt-1 px-2.5 py-1.5 text-xs font-medium"
                 />
               </div>
 
               <div>
-                <span className="block text-[0.68rem] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-                  Tap Mode
+                <span className="block text-xs font-medium text-[var(--text-secondary)]">
+                  Tap mode
                 </span>
-                <div className="mt-1 inline-flex rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5 text-xs">
+                <div className="mt-1 inline-flex rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5 text-xs">
                   <button
                     type="button"
                     onClick={() => setRereadMode(false)}
                     aria-pressed={!rereadMode}
-                    className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
+                    className={`rounded-[4px] px-2.5 py-1 font-medium transition-colors ${
                       !rereadMode
                         ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
                         : 'text-[var(--text-secondary)]'
@@ -201,9 +189,9 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
                     type="button"
                     onClick={() => setRereadMode(true)}
                     aria-pressed={rereadMode}
-                    className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 font-medium transition-colors ${
+                    className={`inline-flex items-center gap-1 rounded-[4px] px-2.5 py-1 font-medium transition-colors ${
                       rereadMode
-                        ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)] shadow-2xs'
+                        ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
                         : 'text-[var(--text-secondary)]'
                     }`}
                   >
@@ -218,7 +206,7 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
               <button
                 type="button"
                 onClick={() => void markBookComplete(book.id, readDate)}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[var(--color-sage)] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-95"
+                className="btn-sage inline-flex min-h-9 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium hover:opacity-90"
               >
                 <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>{bp.completed ? 'Log Full Re-Read' : 'Mark All Read'}</span>
@@ -228,7 +216,7 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
                 <button
                   type="button"
                   onClick={() => setConfirmClear(true)}
-                  className="inline-flex min-h-9 items-center gap-1 rounded-xl border border-[var(--border-subtle)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:border-[var(--color-crimson)] hover:text-[var(--color-crimson)]"
+                  className="inline-flex min-h-9 items-center gap-1 rounded-md border border-[var(--border-subtle)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:border-[var(--color-crimson)] hover:text-[var(--color-crimson)]"
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Reset</span>
@@ -236,7 +224,7 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
               )}
 
               {confirmClear && (
-                <div className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--color-crimson)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs">
+                <div className="inline-flex items-center gap-2 rounded-md border border-[var(--color-crimson)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs">
                   <button
                     type="button"
                     onClick={() => setConfirmClear(false)}
@@ -263,7 +251,7 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
           <div className="overflow-y-auto p-5 sm:p-6">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-[var(--text-secondary)]">
-                Tip: Hold <kbd className="rounded border border-[var(--border-strong)] px-1 py-0.5 text-[0.68rem]">Shift</kbd> and click two chapters to log a full range at once.
+                Hold <kbd className="rounded border border-[var(--border-strong)] px-1 py-0.5 text-[0.7rem]">Shift</kbd> and click two chapters to log a full range at once.
               </p>
               <input
                 type="text"
@@ -271,7 +259,7 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
                 onChange={(e) => setNote(e.target.value)}
                 aria-label="Optional reflection note for next chapter click"
                 placeholder="Optional note for next click…"
-                className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] sm:w-56"
+                className="folio-input px-2.5 py-1.5 text-xs placeholder:text-[var(--text-secondary)] sm:w-56"
               />
             </div>
 
@@ -283,38 +271,31 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
                 const readCount = state?.readCount ?? 0;
 
                 return (
-                  <motion.button
+                  <button
                     key={ch}
                     type="button"
-                    whileTap={{ scale: 0.9 }}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{
-                      duration: 0.18,
-                      delay: Math.min(idx * 0.008, 0.28),
-                    }}
                     onClick={(e) => void handleChapterClick(e, ch)}
                     aria-pressed={isRead}
                     title={
                       state
-                        ? `${book.name} ${ch} · Read ${readCount}× (Last: ${formatPlainDate(state.lastReadDate)})`
-                        : `${book.name} ${ch} · Unread`
+                        ? `${book.name} ${ch} — Read ${readCount}× (Last: ${formatPlainDate(state.lastReadDate)})`
+                        : `${book.name} ${ch} — Unread`
                     }
-                    className={`relative flex min-h-11 flex-col items-center justify-center rounded-xl border text-sm font-semibold tabular-nums transition-colors ${
+                    className={`relative flex min-h-11 flex-col items-center justify-center rounded-md border text-sm font-medium tabular-nums transition-colors active:scale-95 ${
                       isRead
                         ? 'chapter-tile-read border-[var(--color-sage)] bg-[var(--color-sage-soft)] text-[var(--color-sage)]'
-                        : 'border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-[var(--color-accent)]'
+                        : 'border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--color-accent)]'
                     }`}
                   >
                     <span>{ch}</span>
                     {readCount >= 2 ? (
-                      <span className="text-[0.6rem] font-bold leading-none text-[var(--color-accent)]">
+                      <span className="text-[0.62rem] font-semibold leading-none text-[var(--color-lamp)]">
                         {readCount}×
                       </span>
                     ) : isRead ? (
                       <Check className="h-3 w-3 opacity-80" aria-hidden="true" />
                     ) : null}
-                  </motion.button>
+                  </button>
                 );
               })}
             </div>

@@ -1,12 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import {
-  Award,
-  BookOpen,
-  Compass,
-  ScrollText,
-  Settings,
-} from 'lucide-react';
+import { Award, BookOpen, Compass, ScrollText, Settings } from 'lucide-react';
 import { useBibleStore } from '../../store/useBibleStore';
 import { SanctuaryLamp } from './SanctuaryLamp';
 
@@ -18,7 +12,11 @@ interface AppHeaderProps {
   onOpenSettings: () => void;
 }
 
-const NAV_ITEMS: { id: AppTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const NAV_ITEMS: {
+  id: AppTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
   { id: 'dashboard', label: 'Sanctuary', icon: Compass },
   { id: 'library', label: 'Books & Chapters', icon: BookOpen },
   { id: 'achievements', label: 'Hall of Seals', icon: Award },
@@ -34,32 +32,29 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   return (
-    <header className="sticky top-0 z-30 border-b border-[var(--border-subtle)] bg-[color-mix(in_oklab,var(--bg-canvas)_88%,transparent)] backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        {/* Brand */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] shadow-xs">
-            <SanctuaryLamp active={summary.currentStreak > 0} size={30} />
+    <header className="sticky top-0 z-30 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 pt-3 sm:px-6 lg:py-0">
+        {/* Wordmark & Live Count */}
+        <div className="flex items-center gap-3 py-1 lg:py-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
+            <SanctuaryLamp active={summary.currentStreak > 0} size={26} />
           </div>
-          <div>
-            <div className="flex items-baseline gap-2">
-              <span className="font-display text-xl font-semibold tracking-tight text-[var(--text-primary)]">
-                Selah
-              </span>
-              <span className="hidden text-xs font-medium text-[var(--text-secondary)] sm:inline">
-                Scripture Sanctuary
-              </span>
-            </div>
-            <p className="text-xs text-[var(--text-secondary)] tabular-nums">
+          <div className="flex items-baseline gap-3">
+            <span className="font-display text-2xl font-medium tracking-tight text-[var(--text-primary)]">
+              Selah
+            </span>
+            <span className="hidden text-xs font-medium text-[var(--text-secondary)] tabular-nums sm:inline">
               {summary.totalChaptersRead.toLocaleString()} / {summary.totalChapters.toLocaleString()} chapters
-              {summary.currentStreak > 0 ? ` · ${summary.currentStreak}d streak` : ''}
-            </p>
+            </span>
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav aria-label="Primary" className="order-3 w-full overflow-x-auto pb-1 lg:order-2 lg:w-auto lg:pb-0">
-          <div className="inline-flex min-w-full gap-1 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-1 lg:min-w-0">
+        {/* Underline Editorial Navigation */}
+        <nav
+          aria-label="Primary"
+          className="order-3 -mx-4 flex w-[calc(100%+2rem)] overflow-x-auto border-t border-[var(--border-subtle)] px-4 lg:order-2 lg:mx-0 lg:w-auto lg:border-t-0 lg:px-0"
+        >
+          <div className="flex min-w-full gap-1 sm:gap-2 lg:min-w-0">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -69,26 +64,31 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                   type="button"
                   onClick={() => onSelectTab(item.id)}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`relative flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3.5 py-2 text-sm font-medium transition-colors lg:flex-initial ${
+                  className={`relative flex flex-1 items-center justify-center gap-2 whitespace-nowrap px-3 py-3 text-sm font-medium transition-colors lg:flex-initial lg:py-4 ${
                     isActive
                       ? 'text-[var(--text-primary)]'
                       : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
-                  {isActive && (
-                    <motion.span
-                      layoutId="nav-active-pill"
-                      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                      className="absolute inset-0 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] shadow-xs"
-                    />
-                  )}
-                  <Icon className="relative z-10 h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span className="relative z-10">{item.label}</span>
+                  <Icon
+                    className={`h-4 w-4 shrink-0 ${
+                      isActive ? 'text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <span>{item.label}</span>
                   {item.id === 'achievements' && unlockedCount > 0 ? (
-                    <span className="relative z-10 rounded-full bg-[var(--color-accent-soft)] px-1.5 py-0.5 text-[0.68rem] font-semibold text-[var(--color-accent)] tabular-nums">
+                    <span className="rounded bg-[var(--color-accent-soft)] px-1.5 py-0.5 text-[0.7rem] font-semibold leading-none text-[var(--color-accent)] tabular-nums">
                       {unlockedCount}
                     </span>
                   ) : null}
+                  {isActive && (
+                    <motion.span
+                      layoutId="nav-underline"
+                      transition={{ type: 'spring', stiffness: 420, damping: 36 }}
+                      className="absolute inset-x-1 bottom-0 h-[2px] bg-[var(--color-accent)]"
+                    />
+                  )}
                 </button>
               );
             })}
@@ -96,12 +96,17 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </nav>
 
         {/* Actions */}
-        <div className="order-2 flex items-center gap-2 lg:order-3">
+        <div className="order-2 flex items-center gap-3 py-1 lg:order-3 lg:py-3">
+          {summary.currentStreak > 0 && (
+            <span className="hidden text-xs font-medium text-[var(--text-secondary)] tabular-nums md:inline lg:hidden xl:inline">
+              {summary.currentStreak}d streak
+            </span>
+          )}
           <button
             type="button"
             onClick={onOpenSettings}
             aria-label="Open settings and data backup"
-            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--bg-surface)]"
+            className="inline-flex min-h-9 items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-1.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--bg-surface)]"
           >
             <Settings className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden="true" />
             <span className="hidden sm:inline">Settings</span>

@@ -1,6 +1,6 @@
 import confetti from 'canvas-confetti';
 
-const SANCTUARY_PALETTE = ['#D4A243', '#E8C678', '#2E6F5E', '#57A78F', '#FAF7F2'];
+const SANCTUARY_PALETTE = ['#1D427D', '#7FA9E8', '#265C4B', '#9C6B21', '#F7F7F4'];
 
 export function prefersReducedMotion(): boolean {
   if (typeof window === 'undefined' || !window.matchMedia) return false;

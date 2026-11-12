@@ -2,69 +2,76 @@
 
 @layer base {
   :root {
-    --font-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-    --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-display: "Newsreader", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 
     --in-oklab: ;
     --in-oklch: ;
 
-    /* Dawn Parchment (Light) & Vesper Candlelight (Dark) raw color tokens */
-    --bg-canvas-light: #FAF7F2;
-    --bg-canvas-dark: #12100E;
+    /* Dawn Parchment (Alabaster Folio) & Vesper Candlelight (Midnight Folio) */
+    --bg-canvas-light: #F7F7F4;
+    --bg-canvas-dark: #12151B;
 
-    --bg-surface-light: #F3EDE2;
-    --bg-surface-dark: #1C1916;
+    --bg-surface-light: #EFEFEA;
+    --bg-surface-dark: #191D25;
 
     --bg-elevated-light: #FFFFFF;
-    --bg-elevated-dark: #25211D;
+    --bg-elevated-dark: #1F242F;
 
-    --bg-subtle-light: #EAE1D2;
-    --bg-subtle-dark: #2E2924;
+    --bg-subtle-light: #E4E4DC;
+    --bg-subtle-dark: #282F3D;
 
-    --text-primary-light: #1E1B18;
-    --text-primary-dark: #F4EFE6;
+    --text-primary-light: #161B22;
+    --text-primary-dark: #EDEFF3;
 
-    --text-secondary-light: #5C554D;
-    --text-secondary-dark: #B5ACA0;
+    --text-secondary-light: #57606A;
+    --text-secondary-dark: #9BA3B0;
 
-    --border-subtle-light: #DDD3C3;
-    --border-subtle-dark: #38322B;
+    --border-subtle-light: #DCDCD3;
+    --border-subtle-dark: #2C3341;
 
-    --border-strong-light: #B4A592;
-    --border-strong-dark: #5B5247;
+    --border-strong-light: #9FA59D;
+    --border-strong-dark: #4A5468;
 
-    --accent-gold-light: #9E6E14;
-    --accent-gold-dark: #E6B95C;
+    /* Primary Ultramarine Ink & Supporting Pigments */
+    --accent-primary-light: #1D427D;
+    --accent-primary-dark: #7FA9E8;
 
-    --accent-gold-soft-light: #F3E4C2;
-    --accent-gold-soft-dark: #382C16;
+    --accent-primary-soft-light: #E6ECF6;
+    --accent-primary-soft-dark: #1C2A42;
 
-    --accent-sage-light: #225E4F;
-    --accent-sage-dark: #56B499;
+    --accent-sage-light: #265C4B;
+    --accent-sage-dark: #63BA9E;
 
-    --accent-sage-soft-light: #DCECE6;
-    --accent-sage-soft-dark: #173129;
+    --accent-sage-soft-light: #DFECE7;
+    --accent-sage-soft-dark: #163029;
 
-    --accent-crimson-light: #9E3A2E;
-    --accent-crimson-dark: #E87B6C;
+    --accent-lamp-light: #9C6B21;
+    --accent-lamp-dark: #E2B15B;
 
-    /* Biblical division ribbon tokens */
-    --div-pentateuch-light: #B87B1E;
-    --div-pentateuch-dark: #E5AA4C;
-    --div-history-light: #A95338;
-    --div-history-dark: #DF8264;
-    --div-wisdom-light: #246A56;
-    --div-wisdom-dark: #58B89C;
-    --div-major-light: #7E3958;
-    --div-major-dark: #D07BA0;
-    --div-minor-light: #8C6A24;
-    --div-minor-dark: #CCA653;
-    --div-gospels-light: #25578B;
-    --div-gospels-dark: #68A4E2;
-    --div-pauline-light: #4A448E;
-    --div-pauline-dark: #948EE2;
-    --div-general-light: #206A73;
-    --div-general-dark: #58B8C4;
+    --accent-lamp-soft-light: #F4EBD7;
+    --accent-lamp-soft-dark: #332917;
+
+    --accent-crimson-light: #B42318;
+    --accent-crimson-dark: #F07167;
+
+    /* Biblical division mineral pigment tokens */
+    --div-pentateuch-light: #9E6320;
+    --div-pentateuch-dark: #DF9F4F;
+    --div-history-light: #9D4432;
+    --div-history-dark: #DF7E6B;
+    --div-wisdom-light: #226351;
+    --div-wisdom-dark: #5BB79B;
+    --div-major-light: #77365B;
+    --div-major-dark: #CC7CA9;
+    --div-minor-light: #7B5F26;
+    --div-minor-dark: #C4A258;
+    --div-gospels-light: #1D427D;
+    --div-gospels-dark: #7BA6EA;
+    --div-pauline-light: #444187;
+    --div-pauline-dark: #9591E0;
+    --div-general-light: #21616D;
+    --div-general-dark: #5CB3C2;
 
     /* Default fallback tokens (light) */
     --bg-canvas: var(--bg-canvas-light);
@@ -75,10 +82,12 @@
     --text-secondary: var(--text-secondary-light);
     --border-subtle: var(--border-subtle-light);
     --border-strong: var(--border-strong-light);
-    --color-accent: var(--accent-gold-light);
-    --color-accent-soft: var(--accent-gold-soft-light);
+    --color-accent: var(--accent-primary-light);
+    --color-accent-soft: var(--accent-primary-soft-light);
     --color-sage: var(--accent-sage-light);
     --color-sage-soft: var(--accent-sage-soft-light);
+    --color-lamp: var(--accent-lamp-light);
+    --color-lamp-soft: var(--accent-lamp-soft-light);
     --color-crimson: var(--accent-crimson-light);
 
     --div-pentateuch: var(--div-pentateuch-light);
@@ -114,10 +123,12 @@
       --text-secondary: var(--text-secondary-dark);
       --border-subtle: var(--border-subtle-dark);
       --border-strong: var(--border-strong-dark);
-      --color-accent: var(--accent-gold-dark);
-      --color-accent-soft: var(--accent-gold-soft-dark);
+      --color-accent: var(--accent-primary-dark);
+      --color-accent-soft: var(--accent-primary-soft-dark);
       --color-sage: var(--accent-sage-dark);
       --color-sage-soft: var(--accent-sage-soft-dark);
+      --color-lamp: var(--accent-lamp-dark);
+      --color-lamp-soft: var(--accent-lamp-soft-dark);
       --color-crimson: var(--accent-crimson-dark);
 
       --div-pentateuch: var(--div-pentateuch-dark);
@@ -141,10 +152,12 @@
       --text-secondary: light-dark(var(--text-secondary-light), var(--text-secondary-dark));
       --border-subtle: light-dark(var(--border-subtle-light), var(--border-subtle-dark));
       --border-strong: light-dark(var(--border-strong-light), var(--border-strong-dark));
-      --color-accent: light-dark(var(--accent-gold-light), var(--accent-gold-dark));
-      --color-accent-soft: light-dark(var(--accent-gold-soft-light), var(--accent-gold-soft-dark));
+      --color-accent: light-dark(var(--accent-primary-light), var(--accent-primary-dark));
+      --color-accent-soft: light-dark(var(--accent-primary-soft-light), var(--accent-primary-soft-dark));
       --color-sage: light-dark(var(--accent-sage-light), var(--accent-sage-dark));
       --color-sage-soft: light-dark(var(--accent-sage-soft-light), var(--accent-sage-soft-dark));
+      --color-lamp: light-dark(var(--accent-lamp-light), var(--accent-lamp-dark));
+      --color-lamp-soft: light-dark(var(--accent-lamp-soft-light), var(--accent-lamp-soft-dark));
       --color-crimson: light-dark(var(--accent-crimson-light), var(--accent-crimson-dark));
 
       --div-pentateuch: light-dark(var(--div-pentateuch-light), var(--div-pentateuch-dark));
@@ -178,17 +191,6 @@
     margin: 0;
     min-height: 100dvh;
     background-color: var(--bg-canvas);
-    background-image:
-      radial-gradient(
-        ellipse 80% 50% at 50% -10%,
-        color-mix(in oklab, var(--color-accent) 11%, transparent),
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 60% 40% at 95% 15%,
-        color-mix(in oklab, var(--color-sage) 8%, transparent),
-        transparent 70%
-      );
     color: var(--text-primary);
   }
 
@@ -198,16 +200,16 @@
   }
 
   :where(a:any-link, button, input, select, textarea, summary, [tabindex]):focus-visible {
-    outline: 3px solid var(--color-accent);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
 
   ::selection {
-    background-color: color-mix(in oklab, var(--color-accent) 28%, transparent);
+    background-color: color-mix(in oklab, var(--color-accent) 22%, transparent);
     color: var(--text-primary);
   }
 
-  /* Native top-layer modal dialogs with smooth entry/exit & scroll containment */
+  /* Native top-layer modal dialogs */
   dialog:modal {
     overscroll-behavior: contain;
     margin: auto;
@@ -217,18 +219,16 @@
     padding: 0;
     max-inline-size: min(94vw, 48rem);
     max-block-size: min(90dvh, 52rem);
-    border-radius: 1.25rem;
-    box-shadow:
-      0 24px 60px -12px rgb(0 0 0 / 0.34),
-      0 0 0 1px color-mix(in oklab, var(--color-accent) 14%, transparent);
+    border-radius: 0.625rem;
+    box-shadow: 0 24px 48px -12px rgb(10 15 26 / 0.28);
     opacity: 0;
     transition-property: opacity, transform, display, overlay;
-    transition-duration: 0.24s;
+    transition-duration: 0.2s;
     transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
     transition-behavior: allow-discrete;
 
     @media (prefers-reduced-motion: no-preference) {
-      transform: translateY(10px) scale(0.97);
+      transform: translateY(8px) scale(0.985);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -239,10 +239,10 @@
   dialog:modal::backdrop {
     overflow: hidden;
     overscroll-behavior: contain;
-    background-color: rgb(15 12 9 / 0);
+    background-color: rgb(12 16 24 / 0);
     backdrop-filter: blur(0px);
     transition-property: background-color, backdrop-filter, display, overlay;
-    transition-duration: 0.24s;
+    transition-duration: 0.2s;
     transition-timing-function: ease-out;
     transition-behavior: allow-discrete;
 
@@ -262,16 +262,16 @@
       transform: translateY(0) scale(1);
 
       @starting-style {
-        transform: translateY(12px) scale(0.96);
+        transform: translateY(8px) scale(0.985);
       }
     }
 
     &::backdrop {
-      background-color: rgb(15 12 9 / 0.56);
-      backdrop-filter: blur(5px);
+      background-color: rgb(12 16 24 / 0.5);
+      backdrop-filter: blur(3px);
 
       @starting-style {
-        background-color: rgb(15 12 9 / 0);
+        background-color: rgb(12 16 24 / 0);
         backdrop-filter: blur(0px);
       }
     }
@@ -296,41 +296,78 @@
   left: 0.75rem;
   z-index: 100;
   padding: 0.625rem 1rem;
-  border-radius: 0.75rem;
+  border-radius: 0.375rem;
   background-color: var(--bg-elevated);
   color: var(--text-primary);
   border: 2px solid var(--color-accent);
   font-weight: 600;
   text-decoration: none;
-  box-shadow: 0 10px 25px rgb(0 0 0 / 0.2);
+  box-shadow: 0 10px 25px rgb(0 0 0 / 0.18);
 }
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-.sanctuary-card {
-  background-color: var(--bg-elevated);
-  border: 1px solid var(--border-subtle);
-  border-radius: 1.125rem;
-  box-shadow:
-    0 1px 2px rgb(0 0 0 / 0.04),
-    0 8px 24px -8px rgb(0 0 0 / 0.06);
+@layer components {
+  .folio-sheet {
+    background-color: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.5rem;
+  }
+
+  .folio-surface {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.5rem;
+  }
+
+  .folio-input {
+    background-color: var(--bg-canvas);
+    border: 1px solid var(--border-subtle);
+    border-radius: 0.375rem;
+    color: var(--text-primary);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .folio-input:hover {
+    border-color: var(--border-strong);
+  }
+
+  .folio-input:focus {
+    border-color: var(--color-accent);
+    background-color: var(--bg-elevated);
+  }
+
+  /* Primary action contrast: light text on dark ultramarine/cypress/crimson, dark ink on bright dark-mode accents */
+  .btn-primary {
+    background-color: var(--color-accent);
+    color: #FFFFFF;
+  }
+
+  .btn-sage {
+    background-color: var(--color-sage);
+    color: #FFFFFF;
+  }
+
+  .btn-danger {
+    background-color: var(--color-crimson);
+    color: #FFFFFF;
+  }
 }
 
-.sanctuary-surface {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
+@media (prefers-color-scheme: dark) {
+  :root:not(:has(> head > meta[name="color-scheme"][content="light"])) .btn-primary,
+  :root:not(:has(> head > meta[name="color-scheme"][content="light"])) .btn-sage,
+  :root:not(:has(> head > meta[name="color-scheme"][content="light"])) .btn-danger {
+    color: #0F141D;
+  }
 }
 
-/* Medallion shimmer sweep & ambient sanctuary glow */
-@keyframes sanctuary-sheen {
-  0% {
-    transform: translateX(-140%) skewX(-20deg);
-  }
-  100% {
-    transform: translateX(240%) skewX(-20deg);
-  }
+:root:has(> head > meta[name="color-scheme"][content="dark"]) .btn-primary,
+:root:has(> head > meta[name="color-scheme"][content="dark"]) .btn-sage,
+:root:has(> head > meta[name="color-scheme"][content="dark"]) .btn-danger {
+  color: #0F141D;
 }
 
 @keyframes ember-pulse {
@@ -339,7 +376,7 @@
     opacity: 0.92;
   }
   50% {
-    transform: scale(1.07) translateY(-1px);
+    transform: scale(1.06) translateY(-1px);
     opacity: 1;
   }
 }
@@ -356,45 +393,19 @@
 .lamp-flame-anim {
   transform-origin: center bottom;
   @media (prefers-reduced-motion: no-preference) {
-    animation: ember-pulse 2.6s ease-in-out infinite;
+    animation: ember-pulse 2.8s ease-in-out infinite;
   }
 }
 
 .halo-spin-anim {
   @media (prefers-reduced-motion: no-preference) {
-    animation: halo-spin 22s linear infinite;
-  }
-}
-
-.sheen-overlay {
-  position: relative;
-  overflow: hidden;
-}
-
-.sheen-overlay::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  width: 45%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in oklab, white 30%, transparent),
-    transparent
-  );
-  transform: translateX(-140%) skewX(-20deg);
-  pointer-events: none;
-}
-
-.sheen-overlay:hover::after {
-  @media (prefers-reduced-motion: no-preference) {
-    animation: sanctuary-sheen 0.85s ease-out;
+    animation: halo-spin 24s linear infinite;
   }
 }
 
 @media (forced-colors: active) {
-  .sanctuary-card,
-  .sanctuary-surface,
+  .folio-sheet,
+  .folio-surface,
   dialog:modal {
     border: 1px solid CanvasText;
   }

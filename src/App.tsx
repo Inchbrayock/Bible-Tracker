@@ -13,10 +13,10 @@ import { BibleStoreProvider, useBibleStore } from './store/useBibleStore';
 import type { AchievementStatus } from './types/bible';
 
 const TAB_TITLES: Record<AppTab, string> = {
-  dashboard: 'Sanctuary | Selah Bible Tracker',
-  library: 'Books & Chapters | Selah Bible Tracker',
-  achievements: 'Hall of Seals | Selah Bible Tracker',
-  journal: 'Journal & Plans | Selah Bible Tracker',
+  dashboard: 'Sanctuary | Selah',
+  library: 'Books & Chapters | Selah',
+  achievements: 'Hall of Seals | Selah',
+  journal: 'Journal & Plans | Selah',
 };
 
 const SanctuaryShell: React.FC = () => {
@@ -51,19 +51,23 @@ const SanctuaryShell: React.FC = () => {
         onOpenSettings={() => setSettingsOpen(true)}
       />
 
-      <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10"
+      >
         {!ready ? (
-          <div className="sanctuary-card p-8 text-center text-sm text-[var(--text-secondary)]">
-            Opening your Scripture Sanctuary…
+          <div className="folio-sheet p-8 text-center text-sm text-[var(--text-secondary)]">
+            Opening your reading ledger…
           </div>
         ) : (
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
             >
               {activeTab === 'dashboard' && (
                 <DashboardView
@@ -88,8 +92,15 @@ const SanctuaryShell: React.FC = () => {
         )}
       </main>
 
-      <footer className="border-t border-[var(--border-subtle)] py-4 text-center text-xs text-[var(--text-secondary)]">
-        Selah — Private, local-first Bible reading tracker · 66 books · 1,189 chapters
+      <footer className="border-t border-[var(--border-subtle)]">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-5 text-xs text-[var(--text-secondary)] sm:px-6">
+          <span className="font-display text-sm font-medium text-[var(--text-primary)]">
+            Selah
+          </span>
+          <span>
+            Private, local-first Bible reading ledger across 66 books and 1,189 chapters.
+          </span>
+        </div>
       </footer>
 
       <BookDetailDialog bookId={openBookId} onClose={() => setOpenBookId(null)} />
