@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { BIBLE_BOOKS, DIVISION_META_BY_ID } from '../../data/bibleCanon';
+import React, { useMemo, useState } from 'react';
+import { BIBLE_BOOKS, DIVISIONS, DIVISION_META_BY_ID } from '../../data/bibleCanon';
 import { useBibleStore } from '../../store/useBibleStore';
-import type { CanonBook } from '../../types/bible';
+import type { BibleDivision, CanonBook } from '../../types/bible';
 
 interface CanonicalSpineBarProps {
   onOpenBook: (bookId: string) => void;
@@ -10,12 +10,29 @@ interface CanonicalSpineBarProps {
 export const CanonicalSpineBar: React.FC<CanonicalSpineBarProps> = ({ onOpenBook }) => {
   const { summary } = useBibleStore();
   const [hoveredBook, setHoveredBook] = useState<CanonBook | null>(null);
+  const [hoveredDivision, setHoveredDivision] = useState<BibleDivision | null>(null);
 
   const otBooks = BIBLE_BOOKS.filter((b) => b.testament === 'OT');
   const ntBooks = BIBLE_BOOKS.filter((b) => b.testament === 'NT');
 
+  const divisionStats = useMemo(() => {
+    return DIVISIONS.map((div) => {
+      const books = BIBLE_BOOKS.filter((b) => b.division === div.id);
+      let read = 0;
+      let total = 0;
+      for (const b of books) {
+        total += b.chapterCount;
+        read += summary.bookProgressById[b.id]?.readChapters ?? 0;
+      }
+      return { div, read, total, bookCount: books.length };
+    });
+  }, [summary.bookProgressById]);
+
   const hoveredProgress = hoveredBook ? summary.bookProgressById[hoveredBook.id] : null;
   const hoveredDiv = hoveredBook ? DIVISION_META_BY_ID[hoveredBook.division] : null;
+  const hoveredDivisionStat = hoveredDivision
+    ? divisionStats.find((d) => d.div.id === hoveredDivision) ?? null
+    : null;
 
   const renderSegment = (books: CanonBook[]) =>
     books.map((book) => {
@@ -24,6 +41,8 @@ export const CanonicalSpineBar: React.FC<CanonicalSpineBarProps> = ({ onOpenBook
       const pct = bp?.percentage ?? 0;
       const isComplete = bp?.completed ?? false;
       const isActive = hoveredBook?.id === book.id;
+      const isDivisionHighlighted = hoveredDivision === book.division;
+      const isDimmedByDivision = hoveredDivision !== null && hoveredDivision !== book.division;
 
       return (
         <button
@@ -36,14 +55,18 @@ export const CanonicalSpineBar: React.FC<CanonicalSpineBarProps> = ({ onOpenBook
           onBlur={() => setHoveredBook(null)}
           style={{ flexGrow: book.chapterCount, flexBasis: 0 }}
           aria-label={`${book.name}: ${bp?.readChapters ?? 0} of ${book.chapterCount} chapters read`}
-          className={`group relative h-11 min-w-[2px] overflow-hidden rounded-[2px] bg-[var(--bg-subtle)] transition-colors sm:h-12 sm:min-w-[3px] ${
-            isActive ? 'ring-1 ring-[var(--text-primary)] ring-offset-1 ring-offset-[var(--bg-elevated)]' : ''
-          }`}
+          className={`group relative h-11 min-w-[2px] overflow-hidden rounded-[2px] bg-[var(--bg-subtle)] transition-[opacity,colors] sm:h-12 sm:min-w-[3px] ${
+            isActive || isDivisionHighlighted
+              ? 'ring-1 ring-[var(--text-primary)] ring-offset-1 ring-offset-[var(--bg-elevated)]'
+              : ''
+          } ${isDimmedByDivision ? 'opacity-40' : 'opacity-100'}`}
         >
-          {/* Baseline highlight when unread & hovered */}
+          {/* Baseline highlight when unread & hovered (or division legend hovered) */}
           <span
             aria-hidden="true"
-            className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-20"
+            className={`absolute inset-0 transition-opacity ${
+              isDivisionHighlighted ? 'opacity-25' : 'opacity-0 group-hover:opacity-20'
+            }`}
             style={{ backgroundColor: divMeta.colorVar }}
           />
           {/* Proportional vertical fill */}
@@ -83,6 +106,26 @@ export const CanonicalSpineBar: React.FC<CanonicalSpineBarProps> = ({ onOpenBook
             <span className="font-medium tabular-nums text-[var(--text-primary)]">
               {hoveredProgress.readChapters} of {hoveredProgress.totalChapters} chapters (
               {Math.round(hoveredProgress.percentage)}%)
+            </span>
+          </>
+        ) : hoveredDivisionStat ? (
+          <>
+            <div className="flex items-baseline gap-2.5">
+              <span className="inline-flex items-center gap-1.5 font-display text-sm font-medium text-[var(--text-primary)]">
+                <span
+                  aria-hidden="true"
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ backgroundColor: hoveredDivisionStat.div.colorVar }}
+                />
+                {hoveredDivisionStat.div.label}
+              </span>
+              <span className="text-[var(--text-secondary)]">
+                {hoveredDivisionStat.bookCount} books
+              </span>
+            </div>
+            <span className="font-medium tabular-nums text-[var(--text-primary)]">
+              {hoveredDivisionStat.read} of {hoveredDivisionStat.total} chapters (
+              {Math.round((hoveredDivisionStat.read / hoveredDivisionStat.total) * 100)}%)
             </span>
           </>
         ) : (
@@ -128,6 +171,33 @@ export const CanonicalSpineBar: React.FC<CanonicalSpineBarProps> = ({ onOpenBook
       <div className="mt-2 hidden items-center justify-between text-[0.72rem] text-[var(--text-secondary)] tabular-nums sm:flex">
         <span>Old Testament (39 books, 929 chapters)</span>
         <span>New Testament (27 books, 260 chapters)</span>
+      </div>
+
+      {/* 8-Division Mineral Pigment Key */}
+      <div
+        className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[var(--border-subtle)]/70 pt-3 text-[0.72rem] text-[var(--text-secondary)]"
+        aria-label="Biblical divisions legend"
+      >
+        {divisionStats.map(({ div, read, total }) => (
+          <span
+            key={div.id}
+            onMouseEnter={() => setHoveredDivision(div.id)}
+            onMouseLeave={() => setHoveredDivision(null)}
+            className={`inline-flex cursor-default items-center gap-1.5 transition-colors ${
+              hoveredDivision === div.id ? 'text-[var(--text-primary)]' : ''
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className="inline-block h-2 w-2 shrink-0 rounded-[2px]"
+              style={{ backgroundColor: div.colorVar }}
+            />
+            <span>{div.shortLabel}</span>
+            <span className="tabular-nums opacity-75">
+              {read}/{total}
+            </span>
+          </span>
+        ))}
       </div>
     </div>
   );

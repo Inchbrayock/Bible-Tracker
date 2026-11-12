@@ -106,4 +106,22 @@ describe('Selah Bible Sanctuary App UI', () => {
       expect(screen.getByText(/4 of 21 chapters read \(19%\)/i)).toBeInTheDocument();
     });
   });
+
+  it('logs the next day of the active reading plan from Sanctuary and opens Reading Plans directly', async () => {
+    render(<App />);
+    expect(await screen.findByText(/Canonical Journey/i)).toBeInTheDocument();
+
+    expect(screen.getByText(/Gospels & Acts Journey/i)).toBeInTheDocument();
+    expect(screen.getByText(/Matthew 1–3/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Log Day 1/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/1 of 45 days/i)).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Matthew 4–6/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /All plans/i }));
+    expect(await screen.findByText(/Guided Reading Plans/i)).toBeInTheDocument();
+  });
 });

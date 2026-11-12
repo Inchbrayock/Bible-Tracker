@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BookMarked, Check, Plus } from 'lucide-react';
 import { BIBLE_BOOKS, BOOKS_BY_ID } from '../../data/bibleCanon';
 import { todayPlainDate } from '../../lib/dates';
@@ -27,7 +27,14 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
   }, [summary]);
 
   const [bookId, setBookId] = useState<string>(suggestedBookId);
+  const manualBookSelectionRef = useRef(false);
   const [chaptersText, setChaptersText] = useState<string>('');
+
+  useEffect(() => {
+    if (!manualBookSelectionRef.current) {
+      setBookId(suggestedBookId);
+    }
+  }, [suggestedBookId]);
   const [readDate, setReadDate] = useState<string>(() => todayPlainDate());
   const [note, setNote] = useState<string>('');
   const [justLogged, setJustLogged] = useState<string | null>(null);
@@ -81,8 +88,12 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
   const ntBooks = BIBLE_BOOKS.filter((b) => b.testament === 'NT');
 
   return (
-    <section className="folio-sheet p-4 sm:p-7" aria-labelledby="quick-log-heading">
-      <div className="flex flex-col justify-between gap-3.5 border-b border-[var(--border-subtle)] pb-4 sm:flex-row sm:flex-wrap sm:items-start sm:gap-4 sm:pb-5">
+    <section
+      className="folio-sheet flex h-full flex-col justify-between p-4 sm:p-7"
+      aria-labelledby="quick-log-heading"
+    >
+      <div>
+        <div className="flex flex-col justify-between gap-3.5 border-b border-[var(--border-subtle)] pb-4 sm:flex-row sm:flex-wrap sm:items-start sm:gap-4 sm:pb-5">
         <div>
           <h2
             id="quick-log-heading"
@@ -119,6 +130,7 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
             id="quick-book-select"
             value={bookId}
             onChange={(e) => {
+              manualBookSelectionRef.current = true;
               setBookId(e.target.value);
               setError(null);
             }}
@@ -224,6 +236,7 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
           {error}
         </p>
       ) : null}
+      </div>
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-subtle)] pt-3.5 text-xs text-[var(--text-secondary)] sm:mt-6 sm:pt-4">
         <span className="tabular-nums">

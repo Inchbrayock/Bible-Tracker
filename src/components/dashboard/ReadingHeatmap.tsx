@@ -104,23 +104,29 @@ export const ReadingHeatmap: React.FC = () => {
         )}
       </div>
 
-      <div ref={scrollContainerRef} className="mt-2 overflow-x-auto pb-2">
-        <div className="inline-block min-w-max">
+      <div ref={scrollContainerRef} className="mt-2 overflow-x-auto pb-2 lg:overflow-x-visible">
+        <div className="inline-block min-w-max lg:block lg:w-full lg:min-w-0">
           {/* Month labels */}
-          <div className="mb-1.5 flex pl-8 text-[0.7rem] font-medium text-[var(--text-secondary)]">
-            {weeks.map((_, wIdx) => {
-              const label = monthLabels.find((m) => m.weekIndex === wIdx);
-              return (
-                <div key={wIdx} className="w-[17px] shrink-0 overflow-visible sm:w-[15px]">
-                  {label ? <span>{label.label}</span> : null}
-                </div>
-              );
-            })}
+          <div className="mb-1.5 flex items-end gap-1.5 text-[0.7rem] font-medium text-[var(--text-secondary)]">
+            <span className="w-7 shrink-0" aria-hidden="true" />
+            <div className="flex gap-[3px] lg:grid lg:flex-1 lg:grid-cols-[repeat(52,minmax(0,1fr))]">
+              {weeks.map((_, wIdx) => {
+                const label = monthLabels.find((m) => m.weekIndex === wIdx);
+                return (
+                  <div
+                    key={wIdx}
+                    className="w-[14px] shrink-0 overflow-visible whitespace-nowrap sm:w-[12px] lg:w-auto"
+                  >
+                    {label ? <span>{label.label}</span> : null}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="flex gap-1.5">
             {/* Weekday axis */}
-            <div className="flex flex-col justify-between py-0.5 pr-1 text-[0.65rem] text-[var(--text-secondary)]">
+            <div className="flex w-7 shrink-0 flex-col justify-between py-0.5 text-[0.65rem] text-[var(--text-secondary)]">
               <span>Sun</span>
               <span>Tue</span>
               <span>Thu</span>
@@ -128,9 +134,13 @@ export const ReadingHeatmap: React.FC = () => {
             </div>
 
             {/* 52 week columns */}
-            <div className="flex gap-[3px]" role="grid" aria-label="52-week Bible reading activity">
+            <div
+              className="flex gap-[3px] lg:grid lg:flex-1 lg:grid-cols-[repeat(52,minmax(0,1fr))]"
+              role="grid"
+              aria-label="52-week Bible reading activity"
+            >
               {weeks.map((week, wIdx) => (
-                <div key={wIdx} className="flex flex-col gap-[3px]" role="row">
+                <div key={wIdx} className="flex flex-col gap-[3px] lg:min-w-0" role="row">
                   {week.map((day) => {
                     const count = day.isFuture ? 0 : dailyCounts[day.date] ?? 0;
                     const level = levelForCount(count);
@@ -145,7 +155,7 @@ export const ReadingHeatmap: React.FC = () => {
                         onFocus={() => setHoveredDay({ date: day.date, count })}
                         onMouseLeave={() => setHoveredDay(null)}
                         aria-label={`${formatPlainDate(day.date)}: ${count} chapters read`}
-                        className={`h-[14px] w-[14px] rounded-[2px] border transition-colors sm:h-[12px] sm:w-[12px] ${
+                        className={`h-[14px] w-[14px] rounded-[2px] border transition-colors sm:h-[12px] sm:w-[12px] lg:aspect-square lg:h-auto lg:w-full ${
                           day.isFuture
                             ? 'cursor-default border-transparent opacity-25'
                             : isSelected

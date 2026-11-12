@@ -31,6 +31,7 @@ const SanctuaryShell: React.FC = () => {
   } = useBibleStore();
 
   const [activeTab, setActiveTab] = useState<AppTab>('dashboard');
+  const [journalInitialTab, setJournalInitialTab] = useState<'journal' | 'plans'>('journal');
   const [openBookId, setOpenBookId] = useState<string | null>(null);
   const [inspectedAchievement, setInspectedAchievement] = useState<{
     status: AchievementStatus;
@@ -54,7 +55,10 @@ const SanctuaryShell: React.FC = () => {
 
       <AppHeader
         activeTab={activeTab}
-        onSelectTab={setActiveTab}
+        onSelectTab={(tab) => {
+          setJournalInitialTab('journal');
+          setActiveTab(tab);
+        }}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenAccount={() => setAccountOpen(true)}
       />
@@ -84,7 +88,10 @@ const SanctuaryShell: React.FC = () => {
                   onInspectAchievement={(status) =>
                     setInspectedAchievement({ status, isNew: false })
                   }
-                  onNavigateTab={setActiveTab}
+                  onNavigateTab={(tab, options) => {
+                    setJournalInitialTab(options?.journalSubTab ?? 'journal');
+                    setActiveTab(tab);
+                  }}
                 />
               )}
               {activeTab === 'library' && <LibraryView onOpenBook={setOpenBookId} />}
@@ -95,7 +102,9 @@ const SanctuaryShell: React.FC = () => {
                   }
                 />
               )}
-              {activeTab === 'journal' && <JournalView onOpenBook={setOpenBookId} />}
+              {activeTab === 'journal' && (
+                <JournalView onOpenBook={setOpenBookId} initialSubTab={journalInitialTab} />
+              )}
             </motion.div>
           </AnimatePresence>
         )}

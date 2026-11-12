@@ -2,28 +2,26 @@ import React, { useMemo } from 'react';
 import { Check, CheckCircle2, Compass } from 'lucide-react';
 import { READING_PLANS } from '../../data/readingPlans';
 import { todayPlainDate } from '../../lib/dates';
+import {
+  computePlanProgress,
+  getActiveReadingPlan,
+  getUnreadAssignmentsForDay,
+} from '../../lib/plans';
 import { useBibleStore } from '../../store/useBibleStore';
 
 export const PlansView: React.FC = () => {
   const { preferences, summary, updatePreferences, logChapters } = useBibleStore();
 
   const activePlan = useMemo(
-    () => READING_PLANS.find((p) => p.id === preferences.activePlanId) ?? READING_PLANS[0],
+    () => getActiveReadingPlan(preferences.activePlanId),
     [preferences.activePlanId]
   );
 
-  const dayStatuses = useMemo(() => {
-    return activePlan.days.map((day) => {
-      const done = day.assignments.every((a) => {
-        const bp = summary.bookProgressById[a.bookId];
-        return a.chapters.every((ch) => Boolean(bp?.chapterMap[ch]));
-      });
-      return { day, done };
-    });
-  }, [activePlan.days, summary.bookProgressById]);
+  const { dayStatuses, completedDaysCount, nextPendingIndex } = useMemo(
+    () => computePlanProgress(activePlan, summary),
+    [activePlan, summary]
+  );
 
-  const completedDaysCount = dayStatuses.filter((d) => d.done).length;
-  const nextPendingIndex = dayStatuses.findIndex((d) => !d.done);
   const startWindow = Math.max(0, nextPendingIndex === -1 ? 0 : nextPendingIndex - 1);
   const visibleDays = dayStatuses.slice(startWindow, startWindow + 12);
 
@@ -31,17 +29,13 @@ export const PlansView: React.FC = () => {
     const targetDay = activePlan.days.find((d) => d.day === dayNumber);
     if (!targetDay) return;
     const today = todayPlainDate();
-    for (const assignment of targetDay.assignments) {
-      const bp = summary.bookProgressById[assignment.bookId];
-      const unread = assignment.chapters.filter((ch) => !bp?.chapterMap[ch]);
-      if (unread.length > 0) {
-        await logChapters({
-          bookId: assignment.bookId,
-          chapters: unread,
-          readDate: today,
-          planId: activePlan.id,
-        });
-      }
+    for (const assignment of getUnreadAssignmentsForDay(targetDay, summary)) {
+      await logChapters({
+        bookId: assignment.bookId,
+        chapters: assignment.chapters,
+        readDate: today,
+        planId: activePlan.id,
+      });
     }
   };
 

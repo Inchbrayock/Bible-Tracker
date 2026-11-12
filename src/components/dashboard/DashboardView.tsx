@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Award, BookOpen, CalendarCheck, Flame, TrendingUp } from 'lucide-react';
-import { BIBLE_BOOKS, BOOKS_BY_ID, DIVISION_META_BY_ID } from '../../data/bibleCanon';
+import { BOOKS_BY_ID, DIVISION_META_BY_ID } from '../../data/bibleCanon';
 import { formatPlainDate } from '../../lib/dates';
 import { formatChapterRanges } from '../../lib/progress';
 import { useBibleStore } from '../../store/useBibleStore';
@@ -8,13 +8,17 @@ import type { AchievementStatus } from '../../types/bible';
 import { MedallionIcon } from '../achievements/MedallionIcon';
 import { SanctuaryLamp } from '../ui/SanctuaryLamp';
 import { CanonicalSpineBar } from './CanonicalSpineBar';
+import { ContinueReadingCard } from './ContinueReadingCard';
 import { QuickLogCard } from './QuickLogCard';
 import { ReadingHeatmap } from './ReadingHeatmap';
 
 interface DashboardViewProps {
   onOpenBook: (bookId: string) => void;
   onInspectAchievement: (achievement: AchievementStatus) => void;
-  onNavigateTab: (tab: 'library' | 'achievements' | 'journal') => void;
+  onNavigateTab: (
+    tab: 'library' | 'achievements' | 'journal',
+    options?: { journalSubTab?: 'journal' | 'plans' }
+  ) => void;
 }
 
 function formatPercent(read: number, total: number): string {
@@ -29,15 +33,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigateTab,
 }) => {
   const { summary, achievements, logs, preferences, activateDemoJourney } = useBibleStore();
-
-  const inProgressBooks = useMemo(
-    () =>
-      BIBLE_BOOKS.map((b) => summary.bookProgressById[b.id])
-        .filter((bp) => bp && bp.readChapters > 0 && !bp.completed)
-        .sort((a, b) => b.percentage - a.percentage)
-        .slice(0, 4),
-    [summary.bookProgressById]
-  );
 
   const closestAchievement = useMemo(() => {
     return (
@@ -58,7 +53,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   return (
-    <div className="space-y-6 sm:space-y-10">
+    <div className="space-y-6 sm:space-y-8">
       {/* First-time Opening Strip (Editorial, unboxed, calm) */}
       {logs.length === 0 && (
         <section className="border-b border-[var(--border-subtle)] pb-6 sm:pb-7">
@@ -72,7 +67,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 private study notes synced to your account or saved directly in your browser.
               </p>
             </div>
-            <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:gap-3 shrink-0">
+            <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:gap-3">
               <button
                 type="button"
                 onClick={() => onOpenBook('john')}
@@ -93,7 +88,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </section>
       )}
 
-      {/* Canonical Progress Ledger + Signature 66-Book Proportional Bar */}
+      {/* Band 1: Canonical Progress Ledger + Signature 66-Book Proportional Bar */}
       <section aria-labelledby="overview-heading" className="folio-sheet p-4 sm:p-8">
         <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--border-subtle)] pb-4 sm:gap-4 sm:pb-5">
           <div>
@@ -116,7 +111,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </button>
         </div>
 
-        {/* Typographic Ledger Metrics (no nested SaaS cards) */}
+        {/* Typographic Ledger Metrics */}
         <div className="grid grid-cols-2 border-b border-[var(--border-subtle)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--border-subtle)]">
           <div className="col-span-2 border-b border-[var(--border-subtle)] py-4 sm:col-span-1 sm:border-b-0 sm:py-5 sm:pr-6">
             <p className="text-xs font-medium text-[var(--text-secondary)]">Whole Bible</p>
@@ -155,19 +150,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* 66-Book Proportional Spine Bar */}
+        {/* 66-Book Proportional Spine Bar & 8-Division Key */}
         <CanonicalSpineBar onOpenBook={onOpenBook} />
       </section>
 
-      {/* Asymmetrical Reading Desk: Log Sheet (7) + Rhythm & Active Rail (5) */}
-      <div className="grid gap-6 sm:gap-8 lg:grid-cols-12">
+      {/* Band 2: Reading Desk — Log a Reading (7) paired with Rhythm & Next Seal (5) */}
+      <div className="grid gap-6 sm:gap-8 lg:grid-cols-12 lg:items-stretch">
         <div className="lg:col-span-7">
           <QuickLogCard onOpenBook={onOpenBook} />
         </div>
 
-        <aside className="space-y-5 sm:space-y-6 lg:col-span-5" aria-label="Reading rhythm and active books">
+        <aside
+          className="flex flex-col gap-5 sm:gap-6 lg:col-span-5"
+          aria-label="Reading rhythm and next seal"
+        >
           {/* Streak & Pace Ledger */}
-          <section className="folio-sheet p-4 sm:p-6">
+          <section className="folio-sheet flex flex-1 flex-col justify-between p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="font-display text-xl font-medium text-[var(--text-primary)]">
@@ -192,7 +190,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   Best streak
                 </span>
                 <p className="mt-1 font-display text-lg font-medium tabular-nums text-[var(--text-primary)]">
-                  {summary.longestStreak} days
+                  {summary.longestStreak} {summary.longestStreak === 1 ? 'day' : 'days'}
                 </p>
               </div>
               <div className="pl-4">
@@ -217,7 +215,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
               {summary.projectedFinishDate ? (
                 <span className="tabular-nums">
-                  Est. finish {formatPlainDate(summary.projectedFinishDate, { month: 'short', year: 'numeric' })}
+                  Est. finish{' '}
+                  {formatPlainDate(summary.projectedFinishDate, { month: 'short', year: 'numeric' })}
                 </span>
               ) : null}
             </div>
@@ -272,15 +271,30 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <span className="text-xs font-medium text-[var(--text-secondary)]">View all</span>
             </button>
           )}
+        </aside>
+      </div>
 
-          {/* In Progress Books & Recent Sessions */}
-          <section className="folio-sheet p-4 sm:p-6" aria-labelledby="active-books-heading">
-            <div className="flex items-baseline justify-between gap-2">
+      {/* Band 3: Continue Reading & Active Plan (7) paired with Recent Sessions (5) */}
+      <div className="grid gap-6 sm:gap-8 lg:grid-cols-12 lg:items-stretch">
+        <div className="lg:col-span-7">
+          <ContinueReadingCard
+            onOpenBook={onOpenBook}
+            onBrowseLibrary={() => onNavigateTab('library')}
+            onOpenPlans={() => onNavigateTab('journal', { journalSubTab: 'plans' })}
+          />
+        </div>
+
+        <section
+          className="folio-sheet flex h-full flex-col justify-between p-4 sm:p-6 lg:col-span-5"
+          aria-labelledby="recent-sessions-heading"
+        >
+          <div>
+            <div className="flex items-baseline justify-between gap-2 border-b border-[var(--border-subtle)] pb-3.5">
               <h2
-                id="active-books-heading"
+                id="recent-sessions-heading"
                 className="font-display text-xl font-medium text-[var(--text-primary)]"
               >
-                In Progress
+                Recent Sessions
               </h2>
               <button
                 type="button"
@@ -291,44 +305,42 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </button>
             </div>
 
-            {inProgressBooks.length === 0 ? (
-              <p className="mt-3 text-sm leading-relaxed text-[var(--text-secondary)]">
-                Open any book from the Library or log a chapter to track books currently underway.
+            {recentLogs.length === 0 ? (
+              <p className="mt-4 text-sm leading-relaxed text-[var(--text-secondary)]">
+                Your logged chapters and reflections will gather here as you read.
               </p>
             ) : (
-              <ul className="mt-4 divide-y divide-[var(--border-subtle)] border-t border-[var(--border-subtle)]">
-                {inProgressBooks.map((bp) => {
-                  const divMeta = DIVISION_META_BY_ID[bp.book.division];
+              <ul className="mt-2 divide-y divide-[var(--border-subtle)]/70">
+                {recentLogs.map((log) => {
+                  const book = BOOKS_BY_ID[log.bookId];
+                  if (!book) return null;
+                  const divMeta = DIVISION_META_BY_ID[book.division];
                   return (
-                    <li key={bp.book.id}>
+                    <li key={log.id}>
                       <button
                         type="button"
-                        onClick={() => onOpenBook(bp.book.id)}
-                        className="flex w-full items-center gap-3 py-3 text-left transition-colors hover:bg-[var(--bg-surface)]"
+                        onClick={() => onOpenBook(book.id)}
+                        className="group -mx-2 flex w-[calc(100%+1rem)] items-start gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-[var(--bg-surface)]/70"
                       >
                         <span
-                          className="h-7 w-1 shrink-0 rounded-full"
-                          style={{ backgroundColor: divMeta.colorVar }}
                           aria-hidden="true"
+                          className="mt-1 h-4 w-1 shrink-0 rounded-full"
+                          style={{ backgroundColor: divMeta.colorVar }}
                         />
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline justify-between gap-2">
-                            <span className="truncate font-display text-base font-medium text-[var(--text-primary)]">
-                              {bp.book.name}
+                          <div className="flex items-baseline justify-between gap-3">
+                            <span className="truncate text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--color-accent)]">
+                              {book.name} {formatChapterRanges(log.chapters)}
                             </span>
-                            <span className="text-xs font-medium tabular-nums text-[var(--text-secondary)]">
-                              {bp.readChapters}/{bp.totalChapters}
+                            <span className="shrink-0 text-xs text-[var(--text-secondary)] tabular-nums">
+                              {formatPlainDate(log.readDate, { month: 'short', day: 'numeric' })}
                             </span>
                           </div>
-                          <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
-                            <div
-                              className="h-full rounded-full"
-                              style={{
-                                width: `${bp.percentage}%`,
-                                backgroundColor: divMeta.colorVar,
-                              }}
-                            />
-                          </div>
+                          {log.note ? (
+                            <p className="mt-0.5 line-clamp-1 font-display text-xs italic text-[var(--text-secondary)]">
+                              “{log.note}”
+                            </p>
+                          ) : null}
                         </div>
                       </button>
                     </li>
@@ -336,41 +348,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 })}
               </ul>
             )}
+          </div>
 
-            {recentLogs.length > 0 && (
-              <div className="mt-4 border-t border-[var(--border-subtle)] pt-4">
-                <h3 className="text-xs font-medium text-[var(--text-secondary)]">
-                  Recent sessions
-                </h3>
-                <ul className="mt-1.5 divide-y divide-[var(--border-subtle)]/60">
-                  {recentLogs.map((log) => {
-                    const book = BOOKS_BY_ID[log.bookId];
-                    if (!book) return null;
-                    return (
-                      <li key={log.id}>
-                        <button
-                          type="button"
-                          onClick={() => onOpenBook(book.id)}
-                          className="flex min-h-9 w-full items-baseline justify-between gap-3 py-1.5 text-left text-xs text-[var(--text-secondary)] hover:text-[var(--color-accent)]"
-                        >
-                          <span className="truncate font-medium text-[var(--text-primary)]">
-                            {book.name} {formatChapterRanges(log.chapters)}
-                          </span>
-                          <span className="shrink-0 tabular-nums">
-                            {formatPlainDate(log.readDate, { month: 'short', day: 'numeric' })}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-          </section>
-        </aside>
+          <div className="mt-4 flex items-center justify-between border-t border-[var(--border-subtle)] pt-3 text-xs text-[var(--text-secondary)] tabular-nums">
+            <span>
+              {summary.totalSessions} {summary.totalSessions === 1 ? 'session' : 'sessions'} recorded
+            </span>
+            <span>
+              {summary.notesCount} {summary.notesCount === 1 ? 'reflection' : 'reflections'}
+            </span>
+          </div>
+        </section>
       </div>
 
-      {/* 52-Week Heatmap */}
+      {/* Band 4: 52-Week Heatmap */}
       <ReadingHeatmap />
     </div>
   );

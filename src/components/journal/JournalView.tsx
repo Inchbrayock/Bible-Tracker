@@ -9,11 +9,15 @@ import { PlansView } from './PlansView';
 
 interface JournalViewProps {
   onOpenBook: (bookId: string) => void;
+  initialSubTab?: 'journal' | 'plans';
 }
 
-export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
+export const JournalView: React.FC<JournalViewProps> = ({
+  onOpenBook,
+  initialSubTab = 'journal',
+}) => {
   const { logs, editLog, removeLog } = useBibleStore();
-  const [subTab, setSubTab] = useState<'journal' | 'plans'>('journal');
+  const [subTab, setSubTab] = useState<'journal' | 'plans'>(initialSubTab);
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDate, setEditDate] = useState('');
