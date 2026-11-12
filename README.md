@@ -1,14 +1,20 @@
-# Selah — Illuminated Bible Reading Sanctuary
+# Selah — Illuminated Bible Reading Ledger
 
-A local-first Bible reading tracker for logging daily Scripture readings, visualizing progress across all **66 books (1,189 chapters)**, keeping reading rhythms, and collecting **28 illuminated achievement seals**.
+A local-first Bible reading tracker for recording daily Scripture readings, visualizing progress across all **66 books (1,189 chapters)**, maintaining reading rhythms, collecting **28 illuminated achievement seals**, and optionally syncing your ledger across devices with Firebase.
 
 ## Features
 
-- **Sanctuary Dashboard**: Overall, Old Testament (929 ch), and New Testament (260 ch) animated radial progress rings, quick-log bar, 52-week reading rhythm heatmap, and active streak oil lamp (with optional 1-day/week Sabbath grace).
-- **Books & 1,189-Chapter Mosaic**: Filter all 66 books by Testament, division, or status; switch between Bookshelf cards and a 1,189-tile whole-Bible mosaic; open any book sheet to toggle chapters, `Shift+Click` chapter ranges, track multiple read-through cycles (`2×`), or attach reflection notes.
-- **Hall of Seals (Achievements)**: 28 curated achievements across Bronze, Silver, Gold, and Luminous tiers (including secret seals) with custom SVG medallions, unlock toasts, and a 3D tilt inspector modal.
-- **Journal & Guided Plans**: Chronological reading history with inline editing, deletion, and reflection search, plus 4 synced reading plans (*Gospels & Acts Journey*, *Psalms & Proverbs Month*, *New Testament in 90 Days*, and *Canonical Bible in 1 Year*).
-- **Adaptive Themes & Backup**: Dawn Parchment (light) and Vesper Candlelight (dark) themes, IndexedDB local-first storage (`Dexie.js`), `Temporal.PlainDate` timezone-safe dates, and JSON export/import.
+- **Sanctuary Dashboard**: Typographic canonical ledger metrics for Whole Bible, Old Testament (`929` ch), and New Testament (`260` ch), paired with a proportional **66-book Canonical Spine Bar**, one-click **Quick Log**, a 52-week **Reading Rhythm Heatmap** (with tap/hover daily inspection and monthly table), and an active **Sanctuary Lamp** streak tracker (with optional 1 rest day per week grace).
+- **Scripture Library & 1,189-Chapter Mosaic**: Filter all 66 books by Testament, division, or completion status; switch between Bookshelf cards and the whole-Bible Mosaic; open any book sheet to toggle individual chapters, select spans with touch-friendly **Range** tap mode or desktop `Shift+Click`, increment re-read cycles (`+1 Re-read`), and attach reflection notes.
+- **Hall of Seals (Achievements)**: **28** curated achievements across Bronze, Silver, Gold, and Luminous tiers (including secret seals) with custom SVG medallions, celebration toasts, and an interactive seal detail modal.
+- **Journal & Guided Reading Plans**: Searchable chronological reading log with inline reflection/chapter editing and deletion, plus 4 progress-synced plans:
+  - *Gospels & Acts Journey* (45 days)
+  - *Psalms & Proverbs Month* (31 days)
+  - *New Testament in 90 Days* (90 days)
+  - *Canonical Bible in 1 Year* (365 days)
+- **Mobile-Friendly & Touch-First Layout**: Responsive 4-tab bottom navigation dock below `1024px`, slide-up bottom-sheet modals below `640px`, stacked two-row OT/NT canonical spine bars on small screens, horizontally scrollable filter chip rails, and safe-area inset support.
+- **Adaptive Themes & Backup**: **Dawn Parchment** (light) and **Vesper Candlelight** (dark) themes, IndexedDB local-first storage via `Dexie`, timezone-safe `Temporal.PlainDate` date math, and JSON backup export/import.
+- **Optional Cloud Account & Sync**: Sign in with Email/Password or Google via Firebase Auth to sync readings, preferences, and theme settings to Cloud Firestore, with local-vs-cloud reconciliation (`Merge into my account` or `Keep cloud only`) when signing in on a device with existing local logs. Runs fully offline/locally when Firebase credentials are not configured.
 
 ## Getting Started
 
@@ -17,8 +23,29 @@ npm install
 npm run dev
 ```
 
+### Optional: Firebase Auth & Firestore Sync
+
+The app works immediately with local browser storage. To enable account sign-in and cloud sync:
+
+1. Copy `.env.example` to `.env.local` and fill in your Firebase web app configuration:
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
+2. Enable **Email/Password** and/or **Google** sign-in in Firebase Authentication.
+3. Deploy the included `firestore.rules` and `firestore.indexes.json` using the Firebase CLI.
+
 ## Scripts
 
 - `npm run dev` — Start the Vite development server
-- `npm run build` — Type-check with TypeScript and build production assets
-- `npm test` — Run the Vitest unit and UI test suite
+- `npm run build` — Type-check with TypeScript (`tsc -b`) and build production assets
+- `npm run preview` — Preview the production bundle locally
+- `npm test` — Run the Vitest unit and component test suite
+
+## Tech Stack
+
+- **UI**: React 19, TypeScript, Tailwind CSS v4, Motion, Lucide React
+- **Data & Sync**: Dexie (IndexedDB), Firebase Auth & Cloud Firestore, `temporal-polyfill`
+- **Build & Test**: Vite 7, Vitest, Testing Library, jsdom
