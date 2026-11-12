@@ -58,11 +58,11 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
   }, [achievements, category, onlyUnlocked]);
 
   return (
-    <div className="space-y-8">
-      <section className="border-b border-[var(--border-subtle)] pb-6">
-        <div className="flex flex-wrap items-end justify-between gap-6">
+    <div className="space-y-6 sm:space-y-8">
+      <section className="border-b border-[var(--border-subtle)] pb-5 sm:pb-6">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:gap-6">
           <div>
-            <h1 className="font-display text-3xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[2.15rem]">
+            <h1 className="font-display text-2xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[2.15rem]">
               Illuminated Hall of Seals
             </h1>
             <p className="mt-1 text-sm text-[var(--text-secondary)] tabular-nums">
@@ -70,10 +70,10 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
             </p>
           </div>
 
-          <div className="grid grid-cols-4 divide-x divide-[var(--border-subtle)] rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
+          <div className="grid w-full grid-cols-4 divide-x divide-[var(--border-subtle)] rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] sm:w-auto">
             {tierStats.map((t) => (
-              <div key={t.tier} className="px-3.5 py-2 text-center">
-                <p className="text-xs text-[var(--text-secondary)]">{TIER_NAMES[t.tier]}</p>
+              <div key={t.tier} className="px-2 py-2 text-center sm:px-3.5">
+                <p className="text-[0.7rem] text-[var(--text-secondary)] sm:text-xs">{TIER_NAMES[t.tier]}</p>
                 <p className="mt-0.5 font-display text-base font-medium tabular-nums text-[var(--text-primary)]">
                   {t.earned}/{t.total}
                 </p>
@@ -82,15 +82,15 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-1.5">
+        <div className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="-mx-3.5 flex flex-nowrap gap-1.5 overflow-x-auto px-3.5 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
                 type="button"
                 onClick={() => setCategory(cat.id)}
                 aria-pressed={category === cat.id}
-                className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`min-h-9 shrink-0 whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-medium transition-colors sm:min-h-0 ${
                   category === cat.id
                     ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
                     : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
@@ -101,7 +101,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
             ))}
           </div>
 
-          <label className="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
+          <label className="inline-flex min-h-9 cursor-pointer items-center gap-2 self-start text-xs font-medium text-[var(--text-secondary)] sm:min-h-0 sm:self-auto">
             <input
               type="checkbox"
               checked={onlyUnlocked}

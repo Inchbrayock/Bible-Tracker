@@ -210,9 +210,9 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
       labelledBy="account-dialog-title"
       className="max-w-md"
     >
-      <div className="flex max-h-[88dvh] flex-col">
-        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-6 py-4">
-          <div>
+      <div className="flex max-h-[92dvh] flex-col sm:max-h-[88dvh]">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3.5 sm:px-6 sm:py-4">
+          <div className="min-w-0">
             <h2
               id="account-dialog-title"
               className="font-display text-2xl font-medium text-[var(--text-primary)]"
@@ -229,13 +229,13 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
             type="button"
             onClick={onClose}
             aria-label="Close account dialog"
-            className="inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] sm:min-h-9 sm:min-w-9"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="space-y-5 overflow-y-auto p-6">
+        <div className="space-y-4 overflow-y-auto p-4 sm:space-y-5 sm:p-6">
           {!firebaseAvailable ? (
             <div className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 text-sm text-[var(--text-secondary)]">
               <p className="font-medium text-[var(--text-primary)]">
@@ -276,12 +276,12 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                         aria-label="Display name"
                         maxLength={100}
                         placeholder="Your name"
-                        className="folio-input min-w-0 flex-1 px-2.5 py-1 text-sm"
+                        className="folio-input min-h-10 min-w-0 flex-1 px-2.5 py-1 text-base sm:min-h-0 sm:text-sm"
                       />
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="btn-sage rounded px-2.5 py-1 text-xs font-medium disabled:opacity-60"
+                        className="btn-sage min-h-10 rounded px-3 py-1 text-xs font-medium disabled:opacity-60 sm:min-h-0 sm:px-2.5"
                       >
                         Save
                       </button>
@@ -291,7 +291,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                           setEditingName(false);
                           setNameDraft(user.displayName ?? '');
                         }}
-                        className="rounded border border-[var(--border-subtle)] px-2.5 py-1 text-xs text-[var(--text-secondary)]"
+                        className="min-h-10 rounded border border-[var(--border-subtle)] px-3 py-1 text-xs text-[var(--text-secondary)] sm:min-h-0 sm:px-2.5"
                       >
                         Cancel
                       </button>
@@ -308,7 +308,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                           setEditingName(true);
                         }}
                         aria-label="Edit display name"
-                        className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]"
+                        className="inline-flex min-h-9 items-center gap-1 rounded px-2.5 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] sm:min-h-0 sm:px-2"
                       >
                         <Edit3 className="h-3 w-3" aria-hidden="true" />
                         <span>Edit</span>
@@ -434,7 +434,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                 </p>
               )}
 
-              <div className="flex items-center justify-between gap-3 border-t border-[var(--border-subtle)] pt-4">
+              <div className="flex flex-col items-stretch justify-between gap-3 border-t border-[var(--border-subtle)] pt-4 sm:flex-row sm:items-center">
                 <p className="text-xs text-[var(--text-secondary)]">
                   Signing out clears this browser’s local copy while keeping your cloud data safe.
                 </p>
@@ -442,7 +442,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                   type="button"
                   disabled={submitting}
                   onClick={() => void handleSignOut()}
-                  className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--color-crimson)] hover:text-[var(--color-crimson)] disabled:opacity-60"
+                  className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--color-crimson)] hover:text-[var(--color-crimson)] disabled:opacity-60 sm:min-h-9"
                 >
                   <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Sign out</span>
@@ -466,7 +466,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                 type="button"
                 disabled={submitting}
                 onClick={() => void handleGoogleSignIn()}
-                className="flex min-h-10 w-full items-center justify-center gap-2.5 rounded-md border border-[var(--border-strong)] bg-[var(--bg-canvas)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] disabled:opacity-60"
+                className="flex min-h-11 w-full items-center justify-center gap-2.5 rounded-md border border-[var(--border-strong)] bg-[var(--bg-canvas)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] disabled:opacity-60 sm:min-h-10"
               >
                 <GoogleMark />
                 <span>Continue with Google</span>
@@ -495,7 +495,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                       setErrorMsg(null);
                       setStatusMsg(null);
                     }}
-                    className={`rounded-[4px] py-1.5 transition-colors ${
+                    className={`min-h-9 rounded-[4px] py-1.5 transition-colors sm:min-h-0 ${
                       mode === 'signin'
                         ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
                         : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -512,7 +512,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                       setErrorMsg(null);
                       setStatusMsg(null);
                     }}
-                    className={`rounded-[4px] py-1.5 transition-colors ${
+                    className={`min-h-9 rounded-[4px] py-1.5 transition-colors sm:min-h-0 ${
                       mode === 'signup'
                         ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
                         : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -540,7 +540,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                       autoComplete="name"
                       maxLength={100}
                       placeholder="How Selah should greet you"
-                      className="folio-input mt-1 w-full px-3 py-2 text-sm placeholder:text-[var(--text-secondary)]"
+                      className="folio-input mt-1 min-h-11 w-full px-3 py-2 text-base placeholder:text-[var(--text-secondary)] sm:min-h-10 sm:text-sm"
                     />
                   </div>
                 )}
@@ -560,7 +560,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
                     placeholder="you@example.com"
-                    className="folio-input mt-1 w-full px-3 py-2 text-sm placeholder:text-[var(--text-secondary)]"
+                    className="folio-input mt-1 min-h-11 w-full px-3 py-2 text-base placeholder:text-[var(--text-secondary)] sm:min-h-10 sm:text-sm"
                   />
                 </div>
 
@@ -581,7 +581,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                             setErrorMsg(null);
                             setStatusMsg(null);
                           }}
-                          className="text-xs font-medium text-[var(--color-accent)] hover:underline"
+                          className="min-h-8 text-xs font-medium text-[var(--color-accent)] hover:underline sm:min-h-0"
                         >
                           Forgot password?
                         </button>
@@ -596,7 +596,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                       onChange={(e) => setPassword(e.target.value)}
                       autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                       placeholder={mode === 'signup' ? 'At least 6 characters' : 'Your password'}
-                      className="folio-input mt-1 w-full px-3 py-2 text-sm placeholder:text-[var(--text-secondary)]"
+                      className="folio-input mt-1 min-h-11 w-full px-3 py-2 text-base placeholder:text-[var(--text-secondary)] sm:min-h-10 sm:text-sm"
                     />
                   </div>
                 )}
@@ -615,7 +615,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="btn-primary inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
+                  className="btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60 sm:min-h-10"
                 >
                   <Mail className="h-4 w-4" aria-hidden="true" />
                   <span>

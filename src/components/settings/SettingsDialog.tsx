@@ -105,9 +105,9 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
   return (
     <ModalDialog open={open} onClose={onClose} labelledBy="settings-title" className="max-w-xl">
-      <div className="flex max-h-[88dvh] flex-col">
-        <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-6 py-4">
-          <div>
+      <div className="flex max-h-[92dvh] flex-col sm:max-h-[88dvh]">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3.5 sm:px-6 sm:py-4">
+          <div className="min-w-0">
             <h2
               id="settings-title"
               className="font-display text-2xl font-medium text-[var(--text-primary)]"
@@ -122,16 +122,16 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close settings"
-            className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] sm:min-h-9 sm:min-w-9"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="space-y-6 overflow-y-auto p-6">
+        <div className="space-y-5 overflow-y-auto p-4 sm:space-y-6 sm:p-6">
           {/* Cloud Account */}
           {onOpenAccount && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5">
+            <div className="flex flex-col justify-between gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 sm:flex-row sm:flex-wrap sm:items-center">
               <div className="flex items-start gap-2.5">
                 <Cloud
                   className={`mt-0.5 h-4 w-4 shrink-0 ${
@@ -139,7 +139,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                   }`}
                   aria-hidden="true"
                 />
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-[var(--text-primary)]">
                     {user ? user.displayName || user.email || 'Signed in' : 'Cloud account sync'}
                   </p>
@@ -156,7 +156,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                   onClose();
                   onOpenAccount();
                 }}
-                className="rounded-md border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
+                className="inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-surface)] sm:min-h-9 sm:w-auto"
               >
                 {user ? 'Manage account' : 'Sign in'}
               </button>
@@ -168,7 +168,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
             <legend className="text-xs font-medium text-[var(--text-secondary)]">
               Color scheme
             </legend>
-            <div className="mt-2.5 grid gap-2.5 sm:grid-cols-3">
+            <div className="mt-2.5 grid gap-2 sm:grid-cols-3 sm:gap-2.5">
               {themeOptions.map((opt) => {
                 const Icon = opt.icon;
                 const active = colorScheme === opt.id;
@@ -178,20 +178,26 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     type="button"
                     onClick={() => setColorScheme(opt.id)}
                     aria-pressed={active}
-                    className={`flex flex-col items-start rounded-md border p-3 text-left transition-colors ${
+                    className={`flex min-h-12 flex-row items-center justify-between gap-3 rounded-md border p-3 text-left transition-colors sm:min-h-0 sm:flex-col sm:items-start sm:justify-start sm:gap-0 ${
                       active
                         ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]'
                         : 'border-[var(--border-subtle)] bg-[var(--bg-canvas)] hover:border-[var(--border-strong)]'
                     }`}
                   >
-                    <div className="flex w-full items-center justify-between">
+                    <div className="flex items-center gap-3 sm:w-full sm:justify-between">
                       <Icon
-                        className={`h-4 w-4 ${active ? 'text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}
+                        className={`h-4 w-4 shrink-0 ${active ? 'text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}
                         aria-hidden="true"
                       />
+                      <div className="sm:hidden">
+                        <span className="block text-sm font-medium text-[var(--text-primary)]">
+                          {opt.label}
+                        </span>
+                        <span className="block text-xs text-[var(--text-secondary)]">{opt.detail}</span>
+                      </div>
                       <span
                         aria-hidden="true"
-                        className="flex h-4 w-7 items-center justify-around rounded-xs border border-black/15 px-0.5"
+                        className="hidden h-4 w-7 items-center justify-around rounded-xs border border-black/15 px-0.5 sm:flex"
                         style={{ backgroundColor: opt.swatchBg }}
                       >
                         <span
@@ -204,10 +210,26 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                         />
                       </span>
                     </div>
-                    <span className="mt-2.5 text-sm font-medium text-[var(--text-primary)]">
+                    <span
+                      aria-hidden="true"
+                      className="flex h-4 w-7 shrink-0 items-center justify-around rounded-xs border border-black/15 px-0.5 sm:hidden"
+                      style={{ backgroundColor: opt.swatchBg }}
+                    >
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: opt.swatchInk }}
+                      />
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: opt.swatchAccent }}
+                      />
+                    </span>
+                    <span className="mt-2.5 hidden text-sm font-medium text-[var(--text-primary)] sm:block">
                       {opt.label}
                     </span>
-                    <span className="text-xs text-[var(--text-secondary)]">{opt.detail}</span>
+                    <span className="hidden text-xs text-[var(--text-secondary)] sm:block">
+                      {opt.detail}
+                    </span>
                   </button>
                 );
               })}
@@ -265,11 +287,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               Data & portability
             </h3>
 
-            <div className="flex flex-wrap gap-2.5">
+            <div className="grid gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
               <button
                 type="button"
                 onClick={handleExport}
-                className="inline-flex min-h-9 items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--border-strong)]"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--border-strong)] sm:min-h-9"
               >
                 <Download className="h-3.5 w-3.5 text-[var(--color-sage)]" aria-hidden="true" />
                 <span>Export JSON backup</span>
@@ -278,7 +300,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex min-h-9 items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--border-strong)]"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--border-strong)] sm:min-h-9"
               >
                 <Upload className="h-3.5 w-3.5 text-[var(--color-accent)]" aria-hidden="true" />
                 <span>Import JSON backup</span>
@@ -300,7 +322,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     setErrorMsg(null);
                   });
                 }}
-                className="inline-flex min-h-9 items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--border-strong)]"
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--border-strong)] sm:min-h-9"
               >
                 <BookOpen className="h-3.5 w-3.5 text-[var(--color-accent)]" aria-hidden="true" />
                 <span>Load sample journey</span>
@@ -323,7 +345,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 <button
                   type="button"
                   onClick={() => setConfirmReset(true)}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-crimson)] hover:underline"
+                  className="inline-flex min-h-9 items-center gap-1.5 text-xs font-medium text-[var(--color-crimson)] hover:underline"
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Reset all reading data…</span>
@@ -337,7 +359,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     <button
                       type="button"
                       onClick={() => setConfirmReset(false)}
-                      className="rounded border border-[var(--border-subtle)] px-2.5 py-1 font-medium text-[var(--text-secondary)]"
+                      className="min-h-9 rounded border border-[var(--border-subtle)] px-3 py-1 font-medium text-[var(--text-secondary)]"
                     >
                       Cancel
                     </button>
@@ -349,7 +371,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                           setStatusMsg('All reading data cleared.');
                         });
                       }}
-                      className="btn-danger rounded px-2.5 py-1 font-semibold"
+                      className="btn-danger min-h-9 rounded px-3 py-1 font-semibold"
                     >
                       Confirm clear
                     </button>

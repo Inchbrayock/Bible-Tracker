@@ -10,6 +10,8 @@ interface BookDetailDialogProps {
   onClose: () => void;
 }
 
+type TapMode = 'toggle' | 'range' | 'reread';
+
 export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onClose }) => {
   const {
     summary,
@@ -20,7 +22,8 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
   } = useBibleStore();
 
   const [readDate, setReadDate] = useState<string>(() => todayPlainDate());
-  const [rereadMode, setRereadMode] = useState(false);
+  const [tapMode, setTapMode] = useState<TapMode>('toggle');
+  const [rangeStart, setRangeStart] = useState<number | null>(null);
   const [lastAnchorChapter, setLastAnchorChapter] = useState<number | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [note, setNote] = useState('');
@@ -28,7 +31,8 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
   useEffect(() => {
     setLastAnchorChapter(null);
     setConfirmClear(false);
-    setRereadMode(false);
+    setTapMode('toggle');
+    setRangeStart(null);
     setNote('');
   }, [bookId]);
 
@@ -41,6 +45,29 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
     chapter: number
   ) => {
     if (!book) return;
+
+    if (tapMode === 'range') {
+      if (rangeStart === null) {
+        setRangeStart(chapter);
+        return;
+      }
+      const start = Math.min(rangeStart, chapter);
+      const end = Math.max(rangeStart, chapter);
+      const rangeChapters = Array.from(
+        { length: end - start + 1 },
+        (_, idx) => start + idx
+      );
+      await logChapters({
+        bookId: book.id,
+        chapters: rangeChapters,
+        readDate: readDate || todayPlainDate(),
+        note: note.trim() || undefined,
+      });
+      if (note.trim()) setNote('');
+      setRangeStart(null);
+      setLastAnchorChapter(chapter);
+      return;
+    }
 
     if (e.shiftKey && lastAnchorChapter !== null) {
       const start = Math.min(lastAnchorChapter, chapter);
@@ -62,7 +89,7 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
 
     setLastAnchorChapter(chapter);
     const isAlreadyRead = Boolean(bp?.chapterMap[chapter]);
-    if (!isAlreadyRead || rereadMode) {
+    if (!isAlreadyRead || tapMode === 'reread') {
       await logChapters({
         bookId: book.id,
         chapters: [chapter],
@@ -83,16 +110,16 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
       className="max-w-2xl"
     >
       {book && bp && divMeta ? (
-        <div className="flex max-h-[88dvh] flex-col">
+        <div className="flex max-h-[92dvh] flex-col sm:max-h-[88dvh]">
           {/* Header */}
-          <div className="relative border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-5 py-5 sm:px-6">
+          <div className="relative border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-4 sm:px-6 sm:py-5">
             <span
               aria-hidden="true"
               className="absolute inset-y-0 left-0 w-1.5"
               style={{ backgroundColor: divMeta.colorVar }}
             />
-            <div className="flex items-start justify-between gap-4 pl-2">
-              <div>
+            <div className="flex items-start justify-between gap-3 pl-2 sm:gap-4">
+              <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--text-secondary)]">
                   <span>{book.testament === 'OT' ? 'Old Testament' : 'New Testament'}</span>
                   <span aria-hidden="true">/</span>
@@ -106,25 +133,27 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
                 </div>
                 <h2
                   id="book-detail-title"
-                  className="mt-1 font-display text-3xl font-medium text-[var(--text-primary)]"
+                  className="mt-1 font-display text-2xl font-medium text-[var(--text-primary)] sm:text-3xl"
                 >
                   {book.name}
                 </h2>
-                <p className="mt-1 text-sm text-[var(--text-secondary)]">{book.theme}</p>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)] sm:text-sm">
+                  {book.theme}
+                </p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
                 aria-label={`Close ${book.name} sheet`}
-                className="inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] sm:min-h-9 sm:min-w-9"
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
 
             {/* Progress Bar */}
-            <div className="mt-4 pl-2">
-              <div className="flex items-center justify-between text-xs font-medium tabular-nums">
+            <div className="mt-3.5 pl-2 sm:mt-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium tabular-nums">
                 <span className="text-[var(--text-primary)]">
                   {bp.readChapters} of {bp.totalChapters} chapters read ({Math.round(bp.percentage)}%)
                 </span>
@@ -149,36 +178,49 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
           </div>
 
           {/* Controls */}
-          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-5 py-3.5 sm:px-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <div>
-                <label
-                  htmlFor="sheet-date-input"
-                  className="block text-xs font-medium text-[var(--text-secondary)]"
+          <div className="flex flex-col gap-2.5 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3 sm:px-6 sm:py-3.5">
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-end sm:gap-3">
+              <div className="flex items-end gap-2 sm:block">
+                <div className="min-w-[9.5rem] flex-1 sm:flex-initial">
+                  <label
+                    htmlFor="sheet-date-input"
+                    className="block text-xs font-medium text-[var(--text-secondary)]"
+                  >
+                    Log date
+                  </label>
+                  <input
+                    id="sheet-date-input"
+                    type="date"
+                    value={readDate}
+                    max={todayPlainDate()}
+                    onChange={(e) => setReadDate(e.target.value)}
+                    className="folio-input mt-1 min-h-10 w-full px-2.5 py-1.5 text-base font-medium sm:min-h-0 sm:w-auto sm:text-xs"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void markBookComplete(book.id, readDate)}
+                  className="btn-sage inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium hover:opacity-90 sm:hidden"
                 >
-                  Log date
-                </label>
-                <input
-                  id="sheet-date-input"
-                  type="date"
-                  value={readDate}
-                  max={todayPlainDate()}
-                  onChange={(e) => setReadDate(e.target.value)}
-                  className="folio-input mt-1 px-2.5 py-1.5 text-xs font-medium"
-                />
+                  <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>{bp.completed ? 'Re-Read All' : 'Mark All'}</span>
+                </button>
               </div>
 
               <div>
                 <span className="block text-xs font-medium text-[var(--text-secondary)]">
                   Tap mode
                 </span>
-                <div className="mt-1 inline-flex rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5 text-xs">
+                <div className="mt-1 grid w-full grid-cols-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5 text-xs sm:inline-flex sm:w-auto">
                   <button
                     type="button"
-                    onClick={() => setRereadMode(false)}
-                    aria-pressed={!rereadMode}
-                    className={`rounded-[4px] px-2.5 py-1 font-medium transition-colors ${
-                      !rereadMode
+                    onClick={() => {
+                      setTapMode('toggle');
+                      setRangeStart(null);
+                    }}
+                    aria-pressed={tapMode === 'toggle'}
+                    className={`min-h-9 rounded-[4px] px-2 py-1 font-medium transition-colors sm:min-h-0 sm:px-2.5 ${
+                      tapMode === 'toggle'
                         ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
                         : 'text-[var(--text-secondary)]'
                     }`}
@@ -187,16 +229,34 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
                   </button>
                   <button
                     type="button"
-                    onClick={() => setRereadMode(true)}
-                    aria-pressed={rereadMode}
-                    className={`inline-flex items-center gap-1 rounded-[4px] px-2.5 py-1 font-medium transition-colors ${
-                      rereadMode
+                    onClick={() => {
+                      setTapMode('range');
+                      setRangeStart(null);
+                    }}
+                    aria-pressed={tapMode === 'range'}
+                    className={`min-h-9 rounded-[4px] px-2 py-1 font-medium transition-colors sm:min-h-0 sm:px-2.5 ${
+                      tapMode === 'range'
                         ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
                         : 'text-[var(--text-secondary)]'
                     }`}
                   >
-                    <RotateCw className="h-3 w-3" aria-hidden="true" />
-                    +1 Re-read
+                    Range
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTapMode('reread');
+                      setRangeStart(null);
+                    }}
+                    aria-pressed={tapMode === 'reread'}
+                    className={`inline-flex min-h-9 items-center justify-center gap-1 rounded-[4px] px-2 py-1 font-medium transition-colors sm:min-h-0 sm:px-2.5 ${
+                      tapMode === 'reread'
+                        ? 'bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
+                        : 'text-[var(--text-secondary)]'
+                    }`}
+                  >
+                    <RotateCw className="h-3 w-3 shrink-0" aria-hidden="true" />
+                    <span className="truncate">+1 Re-read</span>
                   </button>
                 </div>
               </div>
@@ -206,7 +266,7 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
               <button
                 type="button"
                 onClick={() => void markBookComplete(book.id, readDate)}
-                className="btn-sage inline-flex min-h-9 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium hover:opacity-90"
+                className="btn-sage hidden min-h-9 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium hover:opacity-90 sm:inline-flex"
               >
                 <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>{bp.completed ? 'Log Full Re-Read' : 'Mark All Read'}</span>
@@ -216,7 +276,7 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
                 <button
                   type="button"
                   onClick={() => setConfirmClear(true)}
-                  className="inline-flex min-h-9 items-center gap-1 rounded-md border border-[var(--border-subtle)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:border-[var(--color-crimson)] hover:text-[var(--color-crimson)]"
+                  className="inline-flex min-h-9 w-full items-center justify-center gap-1 rounded-md border border-[var(--border-subtle)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:border-[var(--color-crimson)] hover:text-[var(--color-crimson)] sm:w-auto"
                 >
                   <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Reset</span>
@@ -224,11 +284,11 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
               )}
 
               {confirmClear && (
-                <div className="inline-flex items-center gap-2 rounded-md border border-[var(--color-crimson)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs">
+                <div className="inline-flex w-full items-center justify-end gap-1.5 rounded-md border border-[var(--color-crimson)] bg-[var(--bg-surface)] p-1 text-xs sm:w-auto">
                   <button
                     type="button"
                     onClick={() => setConfirmClear(false)}
-                    className="font-medium text-[var(--text-secondary)] hover:underline"
+                    className="min-h-8 rounded px-2.5 font-medium text-[var(--text-secondary)] hover:underline"
                   >
                     Keep
                   </button>
@@ -238,7 +298,7 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
                       void clearBookProgress(book.id);
                       setConfirmClear(false);
                     }}
-                    className="font-semibold text-[var(--color-crimson)] hover:underline"
+                    className="min-h-8 rounded px-2.5 font-semibold text-[var(--color-crimson)] hover:underline"
                   >
                     Confirm Reset
                   </button>
@@ -248,18 +308,42 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
           </div>
 
           {/* Scrollable Chapter Grid */}
-          <div className="overflow-y-auto p-5 sm:p-6">
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-xs text-[var(--text-secondary)]">
-                Hold <kbd className="rounded border border-[var(--border-strong)] px-1 py-0.5 text-[0.7rem]">Shift</kbd> and click two chapters to log a full range at once.
-              </p>
+          <div className="overflow-y-auto p-4 sm:p-6">
+            <div className="mb-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-xs text-[var(--text-secondary)]">
+                {tapMode === 'range' ? (
+                  rangeStart !== null ? (
+                    <span className="font-medium text-[var(--color-accent)]">
+                      Selected Ch. {rangeStart}. Tap an ending chapter to log range.{' '}
+                      <button
+                        type="button"
+                        onClick={() => setRangeStart(null)}
+                        className="underline"
+                      >
+                        Clear
+                      </button>
+                    </span>
+                  ) : (
+                    <span>Tap a starting chapter, then tap an ending chapter to log a range.</span>
+                  )
+                ) : (
+                  <span>
+                    Use <strong>Range</strong> mode (or{' '}
+                    <kbd className="hidden rounded border border-[var(--border-strong)] px-1 py-0.5 text-[0.7rem] sm:inline">
+                      Shift
+                    </kbd>
+                    <span className="sm:hidden">two taps</span>
+                    <span className="hidden sm:inline">+click</span>) to log multiple chapters at once.
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 aria-label="Optional reflection note for next chapter click"
-                placeholder="Optional note for next click…"
-                className="folio-input px-2.5 py-1.5 text-xs placeholder:text-[var(--text-secondary)] sm:w-56"
+                placeholder="Optional note for next tap…"
+                className="folio-input min-h-10 w-full px-3 py-1.5 text-base placeholder:text-[var(--text-secondary)] sm:min-h-0 sm:w-56 sm:px-2.5 sm:text-xs"
               />
             </div>
 
@@ -269,6 +353,7 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
                 const state = bp.chapterMap[ch];
                 const isRead = Boolean(state);
                 const readCount = state?.readCount ?? 0;
+                const isRangeAnchor = tapMode === 'range' && rangeStart === ch;
 
                 return (
                   <button
@@ -281,7 +366,11 @@ export const BookDetailDialog: React.FC<BookDetailDialogProps> = ({ bookId, onCl
                         ? `${book.name} ${ch} — Read ${readCount}× (Last: ${formatPlainDate(state.lastReadDate)})`
                         : `${book.name} ${ch} — Unread`
                     }
-                    className={`relative flex min-h-11 flex-col items-center justify-center rounded-md border text-sm font-medium tabular-nums transition-colors active:scale-95 ${
+                    className={`relative flex min-h-12 flex-col items-center justify-center rounded-md border text-sm font-medium tabular-nums transition-colors active:scale-95 sm:min-h-11 ${
+                      isRangeAnchor
+                        ? 'ring-2 ring-[var(--color-accent)] ring-offset-1 ring-offset-[var(--bg-elevated)]'
+                        : ''
+                    } ${
                       isRead
                         ? 'chapter-tile-read border-[var(--color-sage)] bg-[var(--color-sage-soft)] text-[var(--color-sage)]'
                         : 'border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:border-[var(--color-accent)]'

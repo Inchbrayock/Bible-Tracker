@@ -81,8 +81,8 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
   const ntBooks = BIBLE_BOOKS.filter((b) => b.testament === 'NT');
 
   return (
-    <section className="folio-sheet p-5 sm:p-7" aria-labelledby="quick-log-heading">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border-subtle)] pb-5">
+    <section className="folio-sheet p-4 sm:p-7" aria-labelledby="quick-log-heading">
+      <div className="flex flex-col justify-between gap-3.5 border-b border-[var(--border-subtle)] pb-4 sm:flex-row sm:flex-wrap sm:items-start sm:gap-4 sm:pb-5">
         <div>
           <h2
             id="quick-log-heading"
@@ -98,7 +98,7 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
         <button
           type="button"
           onClick={() => void handleOneClickNext()}
-          className="btn-primary inline-flex min-h-10 items-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-opacity hover:opacity-90"
+          className="btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium transition-opacity hover:opacity-90 sm:min-h-10 sm:w-auto"
         >
           <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
           <span>
@@ -107,8 +107,8 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
         </button>
       </div>
 
-      <form onSubmit={(e) => void handleSubmit(e)} className="mt-6 grid gap-4 sm:grid-cols-12">
-        <div className="sm:col-span-5">
+      <form onSubmit={(e) => void handleSubmit(e)} className="mt-5 grid grid-cols-2 gap-3.5 sm:mt-6 sm:grid-cols-12 sm:gap-4">
+        <div className="col-span-2 sm:col-span-5">
           <label
             htmlFor="quick-book-select"
             className="block text-xs font-medium text-[var(--text-secondary)]"
@@ -122,7 +122,7 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
               setBookId(e.target.value);
               setError(null);
             }}
-            className="folio-input mt-1.5 w-full px-3 py-2 text-sm font-medium"
+            className="folio-input mt-1.5 min-h-11 w-full px-3 py-2 text-base font-medium sm:min-h-10 sm:text-sm"
           >
             <optgroup label="Old Testament">
               {otBooks.map((b) => (
@@ -141,7 +141,7 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
           </select>
         </div>
 
-        <div className="sm:col-span-4">
+        <div className="col-span-1 sm:col-span-4">
           <label
             htmlFor="quick-chapters-input"
             className="block text-xs font-medium text-[var(--text-secondary)]"
@@ -158,14 +158,14 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
             }}
             placeholder={`Next: ${nextChapter} (or 1-4)`}
             aria-describedby="quick-chapters-hint"
-            className="folio-input mt-1.5 w-full px-3 py-2 text-sm placeholder:text-[var(--text-secondary)]"
+            className="folio-input mt-1.5 min-h-11 w-full px-3 py-2 text-base placeholder:text-[var(--text-secondary)] sm:min-h-10 sm:text-sm"
           />
           <p id="quick-chapters-hint" className="mt-1 text-xs text-[var(--text-secondary)]">
-            Range or list up to ch. {selectedBook.chapterCount}
+            Up to ch. {selectedBook.chapterCount}
           </p>
         </div>
 
-        <div className="sm:col-span-3">
+        <div className="col-span-1 sm:col-span-3">
           <label
             htmlFor="quick-date-input"
             className="block text-xs font-medium text-[var(--text-secondary)]"
@@ -178,11 +178,11 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
             value={readDate}
             max={todayPlainDate()}
             onChange={(e) => setReadDate(e.target.value)}
-            className="folio-input mt-1.5 w-full px-3 py-2 text-sm"
+            className="folio-input mt-1.5 min-h-11 w-full px-2.5 py-2 text-base sm:min-h-10 sm:px-3 sm:text-sm"
           />
         </div>
 
-        <div className="sm:col-span-9">
+        <div className="col-span-2 sm:col-span-8">
           <label
             htmlFor="quick-note-input"
             className="block text-xs font-medium text-[var(--text-secondary)]"
@@ -195,14 +195,14 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="What stood out in today’s passage?"
-            className="folio-input mt-1.5 w-full px-3 py-2 text-sm placeholder:text-[var(--text-secondary)]"
+            className="folio-input mt-1.5 min-h-11 w-full px-3 py-2 text-base placeholder:text-[var(--text-secondary)] sm:min-h-10 sm:text-sm"
           />
         </div>
 
-        <div className="flex items-end sm:col-span-3">
+        <div className="col-span-2 flex items-end sm:col-span-4">
           <button
             type="submit"
-            className="btn-sage inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
+            className="btn-sage inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90 sm:min-h-10 sm:px-3"
           >
             {justLogged ? (
               <>
@@ -225,7 +225,7 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
         </p>
       ) : null}
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-subtle)] pt-4 text-xs text-[var(--text-secondary)]">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border-subtle)] pt-3.5 text-xs text-[var(--text-secondary)] sm:mt-6 sm:pt-4">
         <span className="tabular-nums">
           {selectedBook.name}: {selectedProgress?.readChapters ?? 0} of {selectedBook.chapterCount}{' '}
           chapters read
@@ -234,7 +234,7 @@ export const QuickLogCard: React.FC<QuickLogCardProps> = ({ onOpenBook }) => {
           <button
             type="button"
             onClick={() => onOpenBook(selectedBook.id)}
-            className="inline-flex items-center gap-1.5 font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
+            className="inline-flex min-h-9 items-center gap-1.5 font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
           >
             <BookMarked className="h-3.5 w-3.5" aria-hidden="true" />
             <span>Open {selectedBook.name} chapter grid</span>

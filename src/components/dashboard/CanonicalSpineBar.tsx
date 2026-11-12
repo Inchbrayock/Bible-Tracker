@@ -97,25 +97,35 @@ export const CanonicalSpineBar: React.FC<CanonicalSpineBarProps> = ({ onOpenBook
         )}
       </div>
 
-      {/* 66-Book Proportional Spine Track */}
-      <div className="flex items-stretch gap-1.5 sm:gap-3" role="group" aria-label="66-book canonical progress bar">
-        <div
-          className="flex min-w-0 items-stretch gap-px sm:gap-[2px]"
-          style={{ flexGrow: 929, flexBasis: 0 }}
-        >
-          {renderSegment(otBooks)}
+      {/* 66-Book Proportional Spine Track (stacked on mobile so NT books stay readable/tappable, side-by-side on sm+) */}
+      <div
+        className="flex flex-col gap-3 sm:flex-row sm:items-stretch sm:gap-3"
+        role="group"
+        aria-label="66-book canonical progress bar"
+      >
+        <div className="spine-segment-ot min-w-0">
+          <div className="flex min-w-0 items-stretch gap-px sm:gap-[2px]">
+            {renderSegment(otBooks)}
+          </div>
+          <div className="mt-1 flex items-center justify-between text-[0.7rem] text-[var(--text-secondary)] tabular-nums sm:hidden">
+            <span>Old Testament</span>
+            <span>39 books, 929 ch</span>
+          </div>
         </div>
-        <div className="w-px shrink-0 bg-[var(--border-strong)]" aria-hidden="true" />
-        <div
-          className="flex min-w-0 items-stretch gap-px sm:gap-[2px]"
-          style={{ flexGrow: 260, flexBasis: 0 }}
-        >
-          {renderSegment(ntBooks)}
+        <div className="hidden w-px shrink-0 bg-[var(--border-strong)] sm:block" aria-hidden="true" />
+        <div className="spine-segment-nt min-w-0">
+          <div className="flex min-w-0 items-stretch gap-px sm:gap-[2px]">
+            {renderSegment(ntBooks)}
+          </div>
+          <div className="mt-1 flex items-center justify-between text-[0.7rem] text-[var(--text-secondary)] tabular-nums sm:hidden">
+            <span>New Testament</span>
+            <span>27 books, 260 ch</span>
+          </div>
         </div>
       </div>
 
-      {/* Testament Span Labels */}
-      <div className="mt-2 flex items-center justify-between text-[0.72rem] text-[var(--text-secondary)] tabular-nums">
+      {/* Testament Span Labels (Desktop / Tablet) */}
+      <div className="mt-2 hidden items-center justify-between text-[0.72rem] text-[var(--text-secondary)] tabular-nums sm:flex">
         <span>Old Testament (39 books, 929 chapters)</span>
         <span>New Testament (27 books, 260 chapters)</span>
       </div>

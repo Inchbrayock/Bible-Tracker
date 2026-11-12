@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { buildHeatmapCalendar, formatPlainDate, todayPlainDate } from '../../lib/dates';
 import { buildDailyChapterCounts } from '../../lib/progress';
 import { useBibleStore } from '../../store/useBibleStore';
@@ -23,6 +23,17 @@ export const ReadingHeatmap: React.FC = () => {
   const { logs, summary } = useBibleStore();
   const today = todayPlainDate();
   const [hoveredDay, setHoveredDay] = useState<{ date: string; count: number } | null>(null);
+  const [selectedDay, setSelectedDay] = useState<{ date: string; count: number } | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (el && el.scrollWidth > el.clientWidth) {
+      el.scrollLeft = el.scrollWidth;
+    }
+  }, []);
+
+  const inspectedDay = hoveredDay ?? selectedDay;
 
   const dailyCounts = useMemo(() => buildDailyChapterCounts(logs), [logs]);
   const { days, monthLabels } = useMemo(() => buildHeatmapCalendar(today, 52), [today]);
@@ -51,8 +62,8 @@ export const ReadingHeatmap: React.FC = () => {
   }, [dailyCounts]);
 
   return (
-    <section className="folio-sheet p-5 sm:p-7" aria-labelledby="heatmap-heading">
-      <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-[var(--border-subtle)] pb-4">
+    <section className="folio-sheet p-4 sm:p-7" aria-labelledby="heatmap-heading">
+      <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--border-subtle)] pb-4 sm:gap-4">
         <div>
           <h2
             id="heatmap-heading"
@@ -81,26 +92,26 @@ export const ReadingHeatmap: React.FC = () => {
 
       {/* Live readout bar */}
       <div className="mt-4 min-h-5 text-xs font-medium text-[var(--text-secondary)] tabular-nums">
-        {hoveredDay ? (
+        {inspectedDay ? (
           <span>
             <strong className="font-semibold text-[var(--text-primary)]">
-              {formatPlainDate(hoveredDay.date)}
+              {formatPlainDate(inspectedDay.date)}
             </strong>{' '}
-            — {hoveredDay.count} {hoveredDay.count === 1 ? 'chapter' : 'chapters'} read
+            — {inspectedDay.count} {inspectedDay.count === 1 ? 'chapter' : 'chapters'} read
           </span>
         ) : (
-          <span>Hover or focus any day square to inspect chapters logged.</span>
+          <span>Tap or hover any day square to inspect chapters logged.</span>
         )}
       </div>
 
-      <div className="mt-2 overflow-x-auto pb-2">
+      <div ref={scrollContainerRef} className="mt-2 overflow-x-auto pb-2">
         <div className="inline-block min-w-max">
           {/* Month labels */}
           <div className="mb-1.5 flex pl-8 text-[0.7rem] font-medium text-[var(--text-secondary)]">
             {weeks.map((_, wIdx) => {
               const label = monthLabels.find((m) => m.weekIndex === wIdx);
               return (
-                <div key={wIdx} className="w-[15px] shrink-0 overflow-visible">
+                <div key={wIdx} className="w-[17px] shrink-0 overflow-visible sm:w-[15px]">
                   {label ? <span>{label.label}</span> : null}
                 </div>
               );
@@ -123,19 +134,23 @@ export const ReadingHeatmap: React.FC = () => {
                   {week.map((day) => {
                     const count = day.isFuture ? 0 : dailyCounts[day.date] ?? 0;
                     const level = levelForCount(count);
+                    const isSelected = selectedDay?.date === day.date;
                     return (
                       <button
                         key={day.date}
                         type="button"
                         disabled={day.isFuture}
+                        onClick={() => setSelectedDay({ date: day.date, count })}
                         onMouseEnter={() => setHoveredDay({ date: day.date, count })}
                         onFocus={() => setHoveredDay({ date: day.date, count })}
                         onMouseLeave={() => setHoveredDay(null)}
                         aria-label={`${formatPlainDate(day.date)}: ${count} chapters read`}
-                        className={`h-[12px] w-[12px] rounded-[2px] border border-transparent transition-colors ${
+                        className={`h-[14px] w-[14px] rounded-[2px] border transition-colors sm:h-[12px] sm:w-[12px] ${
                           day.isFuture
-                            ? 'cursor-default opacity-25'
-                            : 'hover:border-[var(--text-primary)]'
+                            ? 'cursor-default border-transparent opacity-25'
+                            : isSelected
+                              ? 'border-[var(--text-primary)]'
+                              : 'border-transparent hover:border-[var(--text-primary)]'
                         }`}
                         style={{ backgroundColor: LEVEL_COLORS[level] }}
                       />
@@ -150,7 +165,7 @@ export const ReadingHeatmap: React.FC = () => {
 
       {/* Accessible semantic data table alternative */}
       <details className="mt-4 border-t border-[var(--border-subtle)] pt-3">
-        <summary className="cursor-pointer text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+        <summary className="inline-flex min-h-9 cursor-pointer items-center text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
           Monthly summary table
         </summary>
         {monthlySummary.length === 0 ? (
@@ -158,31 +173,33 @@ export const ReadingHeatmap: React.FC = () => {
             No reading sessions logged yet.
           </p>
         ) : (
-          <table className="mt-3 w-full max-w-md text-left text-xs">
-            <caption className="visually-hidden">Recent monthly Bible reading totals</caption>
-            <thead>
-              <tr className="border-b border-[var(--border-subtle)] text-[var(--text-secondary)]">
-                <th scope="col" className="py-1.5 pr-4 font-medium">
-                  Month
-                </th>
-                <th scope="col" className="py-1.5 pr-4 font-medium">
-                  Active days
-                </th>
-                <th scope="col" className="py-1.5 font-medium">
-                  Chapters logged
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {monthlySummary.map(([month, stats]) => (
-                <tr key={month} className="border-b border-[var(--border-subtle)]/60">
-                  <td className="py-1.5 pr-4 font-medium text-[var(--text-primary)]">{month}</td>
-                  <td className="py-1.5 pr-4 tabular-nums">{stats.activeDays}</td>
-                  <td className="py-1.5 tabular-nums">{stats.chapters}</td>
+          <div className="overflow-x-auto">
+            <table className="mt-3 w-full max-w-md text-left text-xs">
+              <caption className="visually-hidden">Recent monthly Bible reading totals</caption>
+              <thead>
+                <tr className="border-b border-[var(--border-subtle)] text-[var(--text-secondary)]">
+                  <th scope="col" className="py-1.5 pr-4 font-medium">
+                    Month
+                  </th>
+                  <th scope="col" className="py-1.5 pr-4 font-medium">
+                    Active days
+                  </th>
+                  <th scope="col" className="py-1.5 font-medium">
+                    Chapters logged
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {monthlySummary.map(([month, stats]) => (
+                  <tr key={month} className="border-b border-[var(--border-subtle)]/60">
+                    <td className="py-1.5 pr-4 font-medium text-[var(--text-primary)]">{month}</td>
+                    <td className="py-1.5 pr-4 tabular-nums">{stats.activeDays}</td>
+                    <td className="py-1.5 tabular-nums">{stats.chapters}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </details>
     </section>

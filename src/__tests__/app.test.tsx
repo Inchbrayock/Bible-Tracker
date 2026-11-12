@@ -88,4 +88,22 @@ describe('Selah Bible Sanctuary App UI', () => {
     fireEvent.click(psalmsSpine);
     expect(await screen.findByRole('heading', { name: 'Psalms' })).toBeInTheDocument();
   });
+
+  it('logs a multi-chapter range via touch-friendly Range tap mode inside BookDetailDialog', async () => {
+    render(<App />);
+    expect(await screen.findByText(/Canonical Journey/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Open John chapter grid/i }));
+    expect(await screen.findByRole('heading', { name: 'John' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^Range$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^2$/ }));
+    expect(screen.getByText(/Selected Ch\. 2\./i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^5$/ }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/4 of 21 chapters read \(19%\)/i)).toBeInTheDocument();
+    });
+  });
 });

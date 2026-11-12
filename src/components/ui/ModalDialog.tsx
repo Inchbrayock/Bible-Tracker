@@ -93,7 +93,7 @@ export const ModalDialog: React.FC<ModalDialogProps> = ({
       aria-labelledby={labelledBy}
       {...({ closedby: 'any' } as Record<string, string>)}
       onClick={handleNativeClick}
-      className={`w-[94vw] overflow-hidden ${className}`}
+      className={`w-full max-sm:max-w-none sm:w-[94vw] overflow-hidden ${className}`}
     >
       {children}
     </dialog>

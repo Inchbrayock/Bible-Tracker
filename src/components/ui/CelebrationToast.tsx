@@ -20,7 +20,7 @@ export const CelebrationToast: React.FC<CelebrationToastProps> = ({
   return (
     <div
       aria-label="Unlocked achievement notifications"
-      className="pointer-events-none fixed bottom-5 right-5 z-40 flex w-[min(92vw,23rem)] flex-col gap-3"
+      className="pointer-events-none fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 mx-auto flex w-auto max-w-[23rem] flex-col gap-3 sm:inset-x-auto sm:right-5 lg:bottom-5"
     >
       <AnimatePresence>
         {visible.map((item) => (
@@ -58,7 +58,7 @@ export const CelebrationToast: React.FC<CelebrationToastProps> = ({
               type="button"
               onClick={() => onDismiss(item.definition.id)}
               aria-label={`Dismiss ${item.definition.title} notification`}
-              className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] sm:min-h-8 sm:min-w-8"
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>

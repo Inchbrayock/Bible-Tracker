@@ -194,6 +194,16 @@
     color: var(--text-primary);
   }
 
+  button,
+  a,
+  select,
+  input,
+  textarea,
+  summary {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   h1, h2, h3, .font-display {
     font-family: var(--font-display);
     text-wrap: balance;
@@ -209,7 +219,7 @@
     color: var(--text-primary);
   }
 
-  /* Native top-layer modal dialogs */
+  /* Native top-layer modal dialogs (bottom sheet on mobile, centered modal on sm+) */
   dialog:modal {
     overscroll-behavior: contain;
     margin: auto;
@@ -229,6 +239,22 @@
 
     @media (prefers-reduced-motion: no-preference) {
       transform: translateY(8px) scale(0.985);
+    }
+
+    @media (max-width: 639px) {
+      margin: auto 0 0 0;
+      inline-size: 100%;
+      max-inline-size: 100%;
+      max-block-size: 92dvh;
+      border-bottom: 0;
+      border-left: 0;
+      border-right: 0;
+      border-radius: 1rem 1rem 0 0;
+      padding-bottom: env(safe-area-inset-bottom);
+
+      @media (prefers-reduced-motion: no-preference) {
+        transform: translateY(24px);
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -263,6 +289,14 @@
 
       @starting-style {
         transform: translateY(8px) scale(0.985);
+      }
+
+      @media (max-width: 639px) {
+        transform: translateY(0);
+
+        @starting-style {
+          transform: translateY(24px);
+        }
       }
     }
 
@@ -353,6 +387,15 @@
   .btn-danger {
     background-color: var(--color-crimson);
     color: #FFFFFF;
+  }
+
+  @media (min-width: 640px) {
+    .spine-segment-ot {
+      flex: 929 1 0%;
+    }
+    .spine-segment-nt {
+      flex: 260 1 0%;
+    }
   }
 }
 

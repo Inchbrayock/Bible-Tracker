@@ -41,10 +41,13 @@ const SanctuaryShell: React.FC = () => {
 
   useEffect(() => {
     document.title = TAB_TITLES[activeTab];
+    if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
   }, [activeTab]);
 
   return (
-    <div className="min-h-dvh flex flex-col">
+    <div className="min-h-dvh flex flex-col overflow-x-clip">
       <a href="#main-content" className="skip-link visually-hidden">
         Skip to main content
       </a>
@@ -59,7 +62,7 @@ const SanctuaryShell: React.FC = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10"
+        className="mx-auto w-full max-w-6xl flex-1 px-3.5 py-5 sm:px-6 sm:py-9 lg:py-10"
       >
         <MergeBanner />
         {!ready ? (
@@ -98,7 +101,7 @@ const SanctuaryShell: React.FC = () => {
         )}
       </main>
 
-      <footer className="border-t border-[var(--border-subtle)]">
+      <footer className="border-t border-[var(--border-subtle)] pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-5 text-xs text-[var(--text-secondary)] sm:px-6">
           <span className="font-display text-sm font-medium text-[var(--text-primary)]">
             Selah

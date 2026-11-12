@@ -93,7 +93,7 @@ export const PlansView: React.FC = () => {
       </div>
 
       {/* Active Plan Daily Schedule */}
-      <section className="folio-sheet p-5 sm:p-7">
+      <section className="folio-sheet p-4 sm:p-7">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border-subtle)] pb-4">
           <div>
             <h2 className="font-display text-2xl font-medium text-[var(--text-primary)]">
@@ -116,13 +116,13 @@ export const PlansView: React.FC = () => {
           </div>
         </div>
 
-        <ul className="mt-5 divide-y divide-[var(--border-subtle)] rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+        <ul className="mt-4 divide-y divide-[var(--border-subtle)] rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] sm:mt-5">
           {visibleDays.map(({ day, done }) => (
             <li
               key={day.day}
-              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5"
+              className="flex flex-col justify-between gap-3 px-4 py-3.5 sm:flex-row sm:items-center"
             >
-              <div className="flex items-center gap-3.5">
+              <div className="flex min-w-0 items-center gap-3.5">
                 <span
                   className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums ${
                     done
@@ -132,16 +132,16 @@ export const PlansView: React.FC = () => {
                 >
                   {done ? <Check className="h-4 w-4" aria-hidden="true" /> : day.day}
                 </span>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs font-medium text-[var(--text-secondary)]">Day {day.day}</p>
-                  <p className="font-display text-base font-medium text-[var(--text-primary)]">
+                  <p className="font-display text-base font-medium leading-snug text-[var(--text-primary)]">
                     {day.title}
                   </p>
                 </div>
               </div>
 
               {done ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-sage)]">
+                <span className="inline-flex items-center gap-1.5 pl-11 text-xs font-medium text-[var(--color-sage)] sm:shrink-0 sm:pl-0">
                   <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                   Completed
                 </span>
@@ -149,7 +149,7 @@ export const PlansView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => void handleCompletePlanDay(day.day)}
-                  className="btn-primary inline-flex min-h-9 items-center rounded-md px-3.5 py-1.5 text-xs font-medium hover:opacity-90"
+                  className="btn-primary inline-flex min-h-10 w-full shrink-0 items-center justify-center rounded-md px-3.5 py-2 text-xs font-medium hover:opacity-90 sm:min-h-9 sm:w-auto sm:py-1.5"
                 >
                   Log Day {day.day}
                 </button>

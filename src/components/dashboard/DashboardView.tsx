@@ -58,11 +58,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6 sm:space-y-10">
       {/* First-time Opening Strip (Editorial, unboxed, calm) */}
       {logs.length === 0 && (
-        <section className="border-b border-[var(--border-subtle)] pb-7">
-          <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+        <section className="border-b border-[var(--border-subtle)] pb-6 sm:pb-7">
+          <div className="flex flex-col justify-between gap-4 sm:gap-5 lg:flex-row lg:items-end">
             <div className="max-w-[60ch]">
               <h2 className="font-display text-2xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[1.75rem]">
                 A quiet ledger for daily Scripture reading
@@ -72,11 +72,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 private study notes synced to your account or saved directly in your browser.
               </p>
             </div>
-            <div className="flex flex-wrap gap-3 shrink-0">
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:gap-3 shrink-0">
               <button
                 type="button"
                 onClick={() => onOpenBook('john')}
-                className="btn-primary inline-flex min-h-10 items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
+                className="btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90 sm:min-h-10 sm:w-auto"
               >
                 <BookOpen className="h-4 w-4" aria-hidden="true" />
                 <span>Start in John</span>
@@ -84,7 +84,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => void activateDemoJourney()}
-                className="inline-flex min-h-10 items-center rounded-md border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)]"
+                className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] sm:min-h-10 sm:w-auto"
               >
                 Preview Sample Journey
               </button>
@@ -94,12 +94,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* Canonical Progress Ledger + Signature 66-Book Proportional Bar */}
-      <section aria-labelledby="overview-heading" className="folio-sheet p-6 sm:p-8">
-        <div className="flex flex-wrap items-baseline justify-between gap-4 border-b border-[var(--border-subtle)] pb-5">
+      <section aria-labelledby="overview-heading" className="folio-sheet p-4 sm:p-8">
+        <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-[var(--border-subtle)] pb-4 sm:gap-4 sm:pb-5">
           <div>
             <h1
               id="overview-heading"
-              className="font-display text-3xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[2.15rem]"
+              className="font-display text-2xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[2.15rem]"
             >
               Canonical Journey
             </h1>
@@ -110,15 +110,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <button
             type="button"
             onClick={() => onNavigateTab('library')}
-            className="text-sm font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
+            className="inline-flex min-h-9 items-center text-sm font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
           >
             Explore 66 books
           </button>
         </div>
 
         {/* Typographic Ledger Metrics (no nested SaaS cards) */}
-        <div className="grid divide-y divide-[var(--border-subtle)] border-b border-[var(--border-subtle)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          <div className="py-5 sm:pr-6">
+        <div className="grid grid-cols-2 border-b border-[var(--border-subtle)] sm:grid-cols-3 sm:divide-x sm:divide-[var(--border-subtle)]">
+          <div className="col-span-2 border-b border-[var(--border-subtle)] py-4 sm:col-span-1 sm:border-b-0 sm:py-5 sm:pr-6">
             <p className="text-xs font-medium text-[var(--text-secondary)]">Whole Bible</p>
             <div className="mt-1 flex items-baseline gap-3">
               <span className="font-display text-3xl font-medium tracking-tight tabular-nums text-[var(--text-primary)] sm:text-4xl">
@@ -130,25 +130,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
 
-          <div className="py-5 sm:px-6">
+          <div className="border-r border-[var(--border-subtle)] py-4 pr-3 sm:border-r-0 sm:px-6 sm:py-5">
             <p className="text-xs font-medium text-[var(--text-secondary)]">Old Testament</p>
-            <div className="mt-1 flex items-baseline gap-3">
-              <span className="font-display text-3xl font-medium tracking-tight tabular-nums text-[var(--text-primary)] sm:text-4xl">
+            <div className="mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+              <span className="font-display text-2xl font-medium tracking-tight tabular-nums text-[var(--text-primary)] sm:text-4xl">
                 {formatPercent(summary.otChaptersRead, summary.otTotalChapters)}
               </span>
-              <span className="text-sm text-[var(--text-secondary)] tabular-nums">
+              <span className="text-xs text-[var(--text-secondary)] tabular-nums sm:text-sm">
                 {summary.otChaptersRead.toLocaleString()} / {summary.otTotalChapters.toLocaleString()} ch
               </span>
             </div>
           </div>
 
-          <div className="py-5 sm:pl-6">
+          <div className="py-4 pl-3 sm:py-5 sm:pl-6">
             <p className="text-xs font-medium text-[var(--text-secondary)]">New Testament</p>
-            <div className="mt-1 flex items-baseline gap-3">
-              <span className="font-display text-3xl font-medium tracking-tight tabular-nums text-[var(--text-primary)] sm:text-4xl">
+            <div className="mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+              <span className="font-display text-2xl font-medium tracking-tight tabular-nums text-[var(--text-primary)] sm:text-4xl">
                 {formatPercent(summary.ntChaptersRead, summary.ntTotalChapters)}
               </span>
-              <span className="text-sm text-[var(--text-secondary)] tabular-nums">
+              <span className="text-xs text-[var(--text-secondary)] tabular-nums sm:text-sm">
                 {summary.ntChaptersRead.toLocaleString()} / {summary.ntTotalChapters.toLocaleString()} ch
               </span>
             </div>
@@ -160,14 +160,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </section>
 
       {/* Asymmetrical Reading Desk: Log Sheet (7) + Rhythm & Active Rail (5) */}
-      <div className="grid gap-8 lg:grid-cols-12">
+      <div className="grid gap-6 sm:gap-8 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <QuickLogCard onOpenBook={onOpenBook} />
         </div>
 
-        <aside className="space-y-6 lg:col-span-5" aria-label="Reading rhythm and active books">
+        <aside className="space-y-5 sm:space-y-6 lg:col-span-5" aria-label="Reading rhythm and active books">
           {/* Streak & Pace Ledger */}
-          <section className="folio-sheet p-5 sm:p-6">
+          <section className="folio-sheet p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="font-display text-xl font-medium text-[var(--text-primary)]">
@@ -274,7 +274,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           )}
 
           {/* In Progress Books & Recent Sessions */}
-          <section className="folio-sheet p-5 sm:p-6" aria-labelledby="active-books-heading">
+          <section className="folio-sheet p-4 sm:p-6" aria-labelledby="active-books-heading">
             <div className="flex items-baseline justify-between gap-2">
               <h2
                 id="active-books-heading"
@@ -285,7 +285,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => onNavigateTab('journal')}
-                className="text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
+                className="inline-flex min-h-9 items-center text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
               >
                 View journal
               </button>
@@ -342,25 +342,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <h3 className="text-xs font-medium text-[var(--text-secondary)]">
                   Recent sessions
                 </h3>
-                <ul className="mt-2.5 space-y-2">
+                <ul className="mt-1.5 divide-y divide-[var(--border-subtle)]/60">
                   {recentLogs.map((log) => {
                     const book = BOOKS_BY_ID[log.bookId];
                     if (!book) return null;
                     return (
-                      <li
-                        key={log.id}
-                        className="flex items-baseline justify-between gap-2 text-xs text-[var(--text-secondary)]"
-                      >
+                      <li key={log.id}>
                         <button
                           type="button"
                           onClick={() => onOpenBook(book.id)}
-                          className="truncate font-medium text-[var(--text-primary)] hover:text-[var(--color-accent)] hover:underline"
+                          className="flex min-h-9 w-full items-baseline justify-between gap-3 py-1.5 text-left text-xs text-[var(--text-secondary)] hover:text-[var(--color-accent)]"
                         >
-                          {book.name} {formatChapterRanges(log.chapters)}
+                          <span className="truncate font-medium text-[var(--text-primary)]">
+                            {book.name} {formatChapterRanges(log.chapters)}
+                          </span>
+                          <span className="shrink-0 tabular-nums">
+                            {formatPlainDate(log.readDate, { month: 'short', day: 'numeric' })}
+                          </span>
                         </button>
-                        <span className="shrink-0 tabular-nums">
-                          {formatPlainDate(log.readDate, { month: 'short', day: 'numeric' })}
-                        </span>
                       </li>
                     );
                   })}

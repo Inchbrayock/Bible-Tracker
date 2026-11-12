@@ -63,12 +63,12 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* Page Header & Filter Controls */}
-      <section className="border-b border-[var(--border-subtle)] pb-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+      <section className="border-b border-[var(--border-subtle)] pb-5 sm:pb-6">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:flex-wrap sm:items-end">
           <div>
-            <h1 className="font-display text-3xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[2.15rem]">
+            <h1 className="font-display text-2xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[2.15rem]">
               Scripture Library
             </h1>
             <p className="mt-1 text-sm text-[var(--text-secondary)] tabular-nums">
@@ -77,7 +77,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
           </div>
 
           <div
-            className="inline-flex rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5"
+            className="grid w-full grid-cols-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5 sm:inline-flex sm:w-auto"
             role="group"
             aria-label="Library view mode"
           >
@@ -85,7 +85,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
               type="button"
               onClick={() => setViewMode('bookshelf')}
               aria-pressed={viewMode === 'bookshelf'}
-              className={`inline-flex items-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors sm:min-h-0 ${
                 viewMode === 'bookshelf'
                   ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -98,7 +98,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
               type="button"
               onClick={() => setViewMode('mosaic')}
               aria-pressed={viewMode === 'mosaic'}
-              className={`inline-flex items-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors sm:min-h-0 ${
                 viewMode === 'mosaic'
                   ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -111,10 +111,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
         </div>
 
         {viewMode === 'bookshelf' && (
-          <div className="mt-6 space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
+          <div className="mt-5 space-y-3.5 sm:mt-6 sm:space-y-4">
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
               {/* Search */}
-              <div className="relative min-w-56 flex-1">
+              <div className="relative w-full sm:min-w-56 sm:flex-1">
                 <Search
                   className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]"
                   aria-hidden="true"
@@ -124,54 +124,56 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   aria-label="Search Bible books"
-                  placeholder="Search book or theme (for example, Psalms, Grace, Rom)…"
-                  className="folio-input w-full py-2 pl-9 pr-3 text-sm placeholder:text-[var(--text-secondary)]"
+                  placeholder="Search book or theme (Psalms, Grace, Rom)…"
+                  className="folio-input min-h-11 w-full py-2 pl-9 pr-3 text-base placeholder:text-[var(--text-secondary)] sm:min-h-10 sm:text-sm"
                 />
               </div>
 
-              {/* Testament */}
-              <div className="inline-flex rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5 text-xs font-medium">
-                {(['ALL', 'OT', 'NT'] as const).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => {
-                      setTestament(t);
-                      setDivision('ALL');
-                    }}
-                    aria-pressed={testament === t}
-                    className={`rounded-[4px] px-3 py-1.5 transition-colors ${
-                      testament === t
-                        ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
-                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                    }`}
-                  >
-                    {t === 'ALL' ? 'All (66)' : t === 'OT' ? 'Old (39)' : 'New (27)'}
-                  </button>
-                ))}
-              </div>
+              <div className="flex flex-wrap items-center gap-2.5 sm:contents">
+                {/* Testament */}
+                <div className="grid flex-1 grid-cols-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5 text-xs font-medium sm:inline-flex sm:flex-none">
+                  {(['ALL', 'OT', 'NT'] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => {
+                        setTestament(t);
+                        setDivision('ALL');
+                      }}
+                      aria-pressed={testament === t}
+                      className={`min-h-9 rounded-[4px] px-2 py-1.5 transition-colors sm:min-h-0 sm:px-3 ${
+                        testament === t
+                          ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
+                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      {t === 'ALL' ? 'All (66)' : t === 'OT' ? 'Old (39)' : 'New (27)'}
+                    </button>
+                  ))}
+                </div>
 
-              {/* Status */}
-              <select
-                aria-label="Filter books by completion status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as StatusFilter)}
-                className="folio-input px-3 py-2 text-xs font-medium"
-              >
-                <option value="all">All statuses</option>
-                <option value="in-progress">In progress</option>
-                <option value="completed">Completed</option>
-                <option value="unread">Unread</option>
-              </select>
+                {/* Status */}
+                <select
+                  aria-label="Filter books by completion status"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as StatusFilter)}
+                  className="folio-input min-h-10 px-3 py-2 text-base font-medium sm:min-h-0 sm:text-xs"
+                >
+                  <option value="all">All statuses</option>
+                  <option value="in-progress">In progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="unread">Unread</option>
+                </select>
+              </div>
             </div>
 
-            {/* Division Chips */}
-            <div className="flex flex-wrap gap-1.5">
+            {/* Division Chips (horizontal scroll rail on mobile, wrap on sm+) */}
+            <div className="-mx-3.5 flex flex-nowrap gap-1.5 overflow-x-auto px-3.5 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
               <button
                 type="button"
                 onClick={() => setDivision('ALL')}
                 aria-pressed={division === 'ALL'}
-                className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                className={`min-h-9 shrink-0 whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-medium transition-colors sm:min-h-0 sm:px-2.5 sm:py-1 ${
                   division === 'ALL'
                     ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
                     : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
@@ -185,7 +187,7 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
                   type="button"
                   onClick={() => setDivision(div.id)}
                   aria-pressed={division === div.id}
-                  className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-medium transition-colors sm:min-h-0 sm:px-2.5 sm:py-1 ${
                     division === div.id
                       ? 'border-[var(--text-primary)] bg-[var(--bg-elevated)] text-[var(--text-primary)]'
                       : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'

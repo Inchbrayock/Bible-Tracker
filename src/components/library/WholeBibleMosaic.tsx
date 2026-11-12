@@ -27,21 +27,22 @@ export const WholeBibleMosaic: React.FC<WholeBibleMosaicProps> = ({ onSelectBook
         {books.map((book) => {
           const bp = summary.bookProgressById[book.id];
           const divMeta = DIVISION_META_BY_ID[book.division];
+          const readCountTotal = bp?.readChapters ?? 0;
           return (
-            <div
+            <button
               key={book.id}
-              className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3"
+              type="button"
+              onClick={() => onSelectBook(book.id)}
+              onMouseLeave={() => setHovered(null)}
+              aria-label={`Open ${book.name}: ${readCountTotal} of ${book.chapterCount} chapters read`}
+              className="group rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 text-left transition-colors hover:border-[var(--border-strong)]"
             >
               <div className="mb-2 flex items-baseline justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={() => onSelectBook(book.id)}
-                  className="font-display text-sm font-medium text-[var(--text-primary)] hover:text-[var(--color-accent)] hover:underline"
-                >
+                <span className="font-display text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--color-accent)]">
                   {book.name}
-                </button>
+                </span>
                 <span className="text-xs tabular-nums text-[var(--text-secondary)]">
-                  {bp?.readChapters ?? 0}/{book.chapterCount}
+                  {readCountTotal}/{book.chapterCount}
                 </span>
               </div>
               <div className="flex flex-wrap gap-[3px]">
@@ -56,21 +57,13 @@ export const WholeBibleMosaic: React.FC<WholeBibleMosaicProps> = ({ onSelectBook
                     bg = 'var(--color-lamp)';
                   }
                   return (
-                    <button
+                    <span
                       key={ch}
-                      type="button"
-                      onClick={() => onSelectBook(book.id)}
+                      aria-hidden="true"
                       onMouseEnter={() =>
                         setHovered({ bookName: book.name, chapter: ch, readCount })
                       }
-                      onFocus={() =>
-                        setHovered({ bookName: book.name, chapter: ch, readCount })
-                      }
-                      onMouseLeave={() => setHovered(null)}
-                      aria-label={`${book.name} chapter ${ch}: ${
-                        readCount === 0 ? 'unread' : `read ${readCount} time${readCount > 1 ? 's' : ''}`
-                      }`}
-                      className={`h-[9px] w-[9px] rounded-[1.5px] transition-transform hover:scale-125 ${
+                      className={`h-2.5 w-2.5 rounded-[1.5px] sm:h-[9px] sm:w-[9px] ${
                         readCount > 0 ? 'chapter-tile-read' : ''
                       }`}
                       style={{ backgroundColor: bg }}
@@ -78,7 +71,7 @@ export const WholeBibleMosaic: React.FC<WholeBibleMosaicProps> = ({ onSelectBook
                   );
                 })}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -86,7 +79,7 @@ export const WholeBibleMosaic: React.FC<WholeBibleMosaicProps> = ({ onSelectBook
   );
 
   return (
-    <section className="folio-sheet p-5 sm:p-7" aria-labelledby="mosaic-heading">
+    <section className="folio-sheet p-4 sm:p-7" aria-labelledby="mosaic-heading">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border-subtle)] pb-4">
         <div>
           <h2
@@ -116,7 +109,7 @@ export const WholeBibleMosaic: React.FC<WholeBibleMosaicProps> = ({ onSelectBook
         </div>
       </div>
 
-      <div className="mt-4 min-h-5 text-xs font-medium text-[var(--text-secondary)]">
+      <div className="mt-4 hidden min-h-5 text-xs font-medium text-[var(--text-secondary)] sm:block">
         {hovered ? (
           <span>
             <strong className="font-semibold text-[var(--text-primary)]">
@@ -125,7 +118,7 @@ export const WholeBibleMosaic: React.FC<WholeBibleMosaicProps> = ({ onSelectBook
             — {hovered.readCount === 0 ? 'Unread' : `Read ${hovered.readCount}×`}
           </span>
         ) : (
-          <span>Hover or focus any chapter square to inspect status.</span>
+          <span>Hover any chapter square to inspect status, or select a book to log chapters.</span>
         )}
       </div>
 

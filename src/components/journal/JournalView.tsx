@@ -62,11 +62,11 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
   };
 
   return (
-    <div className="space-y-8">
-      <section className="border-b border-[var(--border-subtle)] pb-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="space-y-6 sm:space-y-8">
+      <section className="border-b border-[var(--border-subtle)] pb-5 sm:pb-6">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:flex-wrap sm:items-end">
           <div>
-            <h1 className="font-display text-3xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[2.15rem]">
+            <h1 className="font-display text-2xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[2.15rem]">
               {subTab === 'journal' ? 'Reading Journal' : 'Guided Reading Plans'}
             </h1>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
@@ -76,12 +76,12 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
             </p>
           </div>
 
-          <div className="inline-flex rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5">
+          <div className="grid w-full grid-cols-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5 sm:inline-flex sm:w-auto">
             <button
               type="button"
               onClick={() => setSubTab('journal')}
               aria-pressed={subTab === 'journal'}
-              className={`inline-flex items-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors sm:min-h-0 ${
                 subTab === 'journal'
                   ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -94,7 +94,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
               type="button"
               onClick={() => setSubTab('plans')}
               aria-pressed={subTab === 'plans'}
-              className={`inline-flex items-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors sm:min-h-0 ${
                 subTab === 'plans'
                   ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
@@ -107,7 +107,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
         </div>
 
         {subTab === 'journal' && (
-          <div className="relative mt-5 max-w-xl">
+          <div className="relative mt-4 max-w-xl sm:mt-5">
             <Search
               className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]"
               aria-hidden="true"
@@ -117,8 +117,8 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               aria-label="Filter reading journal"
-              placeholder="Search logs by book, reflection note, or date (YYYY-MM-DD)…"
-              className="folio-input w-full py-2 pl-9 pr-3 text-sm placeholder:text-[var(--text-secondary)]"
+              placeholder="Search logs by book, reflection note, or date…"
+              className="folio-input min-h-11 w-full py-2 pl-9 pr-3 text-base placeholder:text-[var(--text-secondary)] sm:min-h-10 sm:text-sm"
             />
           </div>
         )}
@@ -146,7 +146,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
             const isEditing = editingId === log.id;
 
             return (
-              <li key={log.id} className="relative p-5 sm:px-7 sm:py-5">
+              <li key={log.id} className="relative p-4 sm:px-7 sm:py-5">
                 <span
                   aria-hidden="true"
                   className="absolute inset-y-4 left-0 w-1 rounded-r-full"
@@ -167,7 +167,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
                           type="text"
                           value={editChapters}
                           onChange={(e) => setEditChapters(e.target.value)}
-                          className="folio-input mt-1 w-full px-3 py-1.5 text-sm"
+                          className="folio-input mt-1 min-h-10 w-full px-3 py-1.5 text-base sm:text-sm"
                         />
                       </div>
                       <div>
@@ -179,7 +179,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
                           value={editDate}
                           max={todayPlainDate()}
                           onChange={(e) => setEditDate(e.target.value)}
-                          className="folio-input mt-1 w-full px-3 py-1.5 text-sm"
+                          className="folio-input mt-1 min-h-10 w-full px-3 py-1.5 text-base sm:text-sm"
                         />
                       </div>
                     </div>
@@ -191,7 +191,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
                         type="text"
                         value={editNote}
                         onChange={(e) => setEditNote(e.target.value)}
-                        className="folio-input mt-1 w-full px-3 py-1.5 text-sm"
+                        className="folio-input mt-1 min-h-10 w-full px-3 py-1.5 text-base sm:text-sm"
                       />
                     </div>
                     {editError ? (
@@ -199,25 +199,25 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
                         {editError}
                       </p>
                     ) : null}
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={() => void saveEdit(log)}
-                        className="btn-sage rounded-md px-3.5 py-1.5 text-xs font-medium"
+                        className="btn-sage min-h-10 rounded-md px-3.5 py-1.5 text-xs font-medium sm:min-h-9"
                       >
                         Save changes
                       </button>
                       <button
                         type="button"
                         onClick={() => setEditingId(null)}
-                        className="rounded-md border border-[var(--border-subtle)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                        className="min-h-10 rounded-md border border-[var(--border-subtle)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] sm:min-h-9"
                       >
                         Cancel
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-wrap items-start justify-between gap-4 pl-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3 pl-3 sm:gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-secondary)]">
                         <span className="inline-flex items-center gap-1.5 font-medium tabular-nums">
@@ -233,7 +233,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
                       <button
                         type="button"
                         onClick={() => onOpenBook(book.id)}
-                        className="mt-1 font-display text-xl font-medium text-[var(--text-primary)] hover:text-[var(--color-accent)] hover:underline"
+                        className="mt-1 text-left font-display text-xl font-medium text-[var(--text-primary)] hover:text-[var(--color-accent)] hover:underline"
                       >
                         {book.name} {formatChapterRanges(log.chapters)}
                       </button>
@@ -248,22 +248,22 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
                       ) : null}
                     </div>
 
-                    <div className="flex shrink-0 items-center gap-1.5">
+                    <div className="flex shrink-0 items-center gap-2 sm:gap-1.5">
                       <button
                         type="button"
                         onClick={() => startEditing(log)}
                         aria-label={`Edit ${book.name} log`}
-                        className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
+                        className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] sm:min-h-8 sm:min-w-8"
                       >
-                        <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
+                        <Edit3 className="h-4 w-4 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
                       </button>
 
                       {confirmDeleteId === log.id ? (
-                        <div className="inline-flex items-center gap-2 rounded-md border border-[var(--color-crimson)] px-2.5 py-1 text-xs">
+                        <div className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-crimson)] p-1 text-xs">
                           <button
                             type="button"
                             onClick={() => setConfirmDeleteId(null)}
-                            className="text-[var(--text-secondary)] hover:underline"
+                            className="min-h-8 rounded px-2 text-[var(--text-secondary)] hover:underline"
                           >
                             Cancel
                           </button>
@@ -273,7 +273,7 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
                               void removeLog(log.id);
                               setConfirmDeleteId(null);
                             }}
-                            className="font-semibold text-[var(--color-crimson)] hover:underline"
+                            className="min-h-8 rounded px-2 font-semibold text-[var(--color-crimson)] hover:underline"
                           >
                             Delete
                           </button>
@@ -283,9 +283,9 @@ export const JournalView: React.FC<JournalViewProps> = ({ onOpenBook }) => {
                           type="button"
                           onClick={() => setConfirmDeleteId(log.id)}
                           aria-label={`Delete ${book.name} log`}
-                          className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:border-[var(--color-crimson)] hover:text-[var(--color-crimson)]"
+                          className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:border-[var(--color-crimson)] hover:text-[var(--color-crimson)] sm:min-h-8 sm:min-w-8"
                         >
-                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          <Trash2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" aria-hidden="true" />
                         </button>
                       )}
                     </div>

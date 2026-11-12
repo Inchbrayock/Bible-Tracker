@@ -38,7 +38,7 @@ export const MergeBanner: React.FC = () => {
             type="button"
             disabled={busy}
             onClick={() => void resolveGuestMerge('merge')}
-            className="btn-primary rounded-md px-3.5 py-2 text-xs font-medium hover:opacity-90 disabled:opacity-60"
+            className="btn-primary min-h-10 flex-1 rounded-md px-3.5 py-2 text-xs font-medium hover:opacity-90 disabled:opacity-60 sm:min-h-9 sm:flex-initial"
           >
             Merge into my account
           </button>
@@ -46,7 +46,7 @@ export const MergeBanner: React.FC = () => {
             type="button"
             disabled={busy}
             onClick={() => void resolveGuestMerge('cloud-only')}
-            className="rounded-md border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:opacity-60"
+            className="min-h-10 flex-1 rounded-md border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:opacity-60 sm:min-h-9 sm:flex-initial"
           >
             Keep cloud only
           </button>

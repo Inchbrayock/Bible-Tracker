@@ -45,12 +45,12 @@ export const AchievementModal: React.FC<AchievementModalProps> = ({
       className="max-w-lg"
     >
       {achievement ? (
-        <div className="relative p-6 sm:p-8">
+        <div className="relative max-h-[92dvh] overflow-y-auto p-5 sm:max-h-[88dvh] sm:p-8">
           <button
             type="button"
             onClick={onClose}
             aria-label="Close seal details"
-            className="absolute right-4 top-4 inline-flex min-h-9 min-w-9 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)]"
+            className="absolute right-4 top-4 inline-flex min-h-10 min-w-10 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] sm:min-h-9 sm:min-w-9"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
