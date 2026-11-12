@@ -13,15 +13,6 @@ const nativeMock = vi.hoisted(() => ({
     },
     additionalUserInfo: null,
   })),
-  capAppleSignIn: vi.fn(async () => ({
-    user: { displayName: 'Lydia Reader' },
-    credential: {
-      providerId: 'apple.com',
-      idToken: 'apple-id-token',
-      nonce: 'apple-raw-nonce',
-    },
-    additionalUserInfo: null,
-  })),
   capSignOut: vi.fn(async () => {}),
   signInWithPopup: vi.fn(),
   signInWithCredential: vi.fn(),
@@ -31,10 +22,6 @@ const nativeMock = vi.hoisted(() => ({
     providerId: 'google.com',
     idToken,
     accessToken,
-  })),
-  oauthCredential: vi.fn((params: { idToken?: string; rawNonce?: string }) => ({
-    providerId: 'apple.com',
-    ...params,
   })),
   fakeServices: {
     app: {},
@@ -46,7 +33,7 @@ const nativeMock = vi.hoisted(() => ({
 
 vi.mock('../lib/nativeShell', () => ({
   isNativePlatform: () => nativeMock.isNative,
-  getNativePlatform: () => (nativeMock.isNative ? 'ios' : 'web'),
+  getNativePlatform: () => (nativeMock.isNative ? 'android' : 'web'),
   syncNativeStatusBar: vi.fn(async () => {}),
   hideNativeSplashScreen: vi.fn(async () => {}),
   triggerNativeHaptic: vi.fn(async () => {}),
@@ -66,7 +53,6 @@ vi.mock('@capacitor/share', () => ({
 vi.mock('@capacitor-firebase/authentication', () => ({
   FirebaseAuthentication: {
     signInWithGoogle: nativeMock.capGoogleSignIn,
-    signInWithApple: nativeMock.capAppleSignIn,
     signOut: nativeMock.capSignOut,
   },
 }));
@@ -76,38 +62,20 @@ vi.mock('../lib/firebase', () => ({
   getFirebaseServices: () => nativeMock.fakeServices,
 }));
 
-vi.mock('firebase/auth', () => {
-  class MockOAuthProvider {
-    providerId: string;
-    scopes: string[] = [];
-    constructor(providerId: string) {
-      this.providerId = providerId;
-    }
-    addScope(scope: string) {
-      this.scopes.push(scope);
-    }
-    credential(params: { idToken?: string; rawNonce?: string }) {
-      return nativeMock.oauthCredential(params);
-    }
-  }
-
-  return {
-    GoogleAuthProvider: { credential: nativeMock.googleCredential },
-    OAuthProvider: MockOAuthProvider,
-    createUserWithEmailAndPassword: vi.fn(),
-    onAuthStateChanged: vi.fn(() => () => {}),
-    sendPasswordResetEmail: vi.fn(),
-    signInWithCredential: nativeMock.signInWithCredential,
-    signInWithEmailAndPassword: vi.fn(),
-    signInWithPopup: nativeMock.signInWithPopup,
-    signOut: nativeMock.signOut,
-    updateProfile: nativeMock.updateProfile,
-  };
-});
+vi.mock('firebase/auth', () => ({
+  GoogleAuthProvider: { credential: nativeMock.googleCredential },
+  createUserWithEmailAndPassword: vi.fn(),
+  onAuthStateChanged: vi.fn(() => () => {}),
+  sendPasswordResetEmail: vi.fn(),
+  signInWithCredential: nativeMock.signInWithCredential,
+  signInWithEmailAndPassword: vi.fn(),
+  signInWithPopup: nativeMock.signInWithPopup,
+  signOut: nativeMock.signOut,
+  updateProfile: nativeMock.updateProfile,
+}));
 
 import {
   formatAuthError,
-  signInWithAppleAccount,
   signInWithGoogleAccount,
   signOutAccount,
 } from '../lib/auth';
@@ -196,35 +164,6 @@ describe('Capacitor native adapters', () => {
     const webUser = await signInWithGoogleAccount();
     expect(nativeMock.signInWithPopup).toHaveBeenCalledTimes(1);
     expect(webUser.uid).toBe('web-google-1');
-  });
-
-  it('uses native Apple Sign-In credential handoff and persists first-login displayName', async () => {
-    nativeMock.isNative = true;
-    nativeMock.signInWithCredential.mockResolvedValue({
-      user: {
-        uid: 'native-apple-1',
-        email: 'lydia@privaterelay.appleid.com',
-        displayName: null,
-        photoURL: null,
-        emailVerified: true,
-        providerData: [{ providerId: 'apple.com' }],
-      },
-    });
-
-    const user = await signInWithAppleAccount();
-    expect(nativeMock.capAppleSignIn).toHaveBeenCalledWith({
-      skipNativeAuth: true,
-      scopes: ['email', 'name'],
-    });
-    expect(nativeMock.oauthCredential).toHaveBeenCalledWith({
-      idToken: 'apple-id-token',
-      rawNonce: 'apple-raw-nonce',
-    });
-    expect(nativeMock.updateProfile).toHaveBeenCalledWith(
-      expect.objectContaining({ uid: 'native-apple-1' }),
-      { displayName: 'Lydia Reader' }
-    );
-    expect(user.displayName).toBe('Lydia Reader');
   });
 
   it('clears native auth session on signOut and formats native cancellations cleanly', async () => {

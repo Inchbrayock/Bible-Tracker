@@ -41,7 +41,6 @@ import {
   formatAuthError,
   isAuthAvailable,
   sendAccountPasswordReset,
-  signInWithAppleAccount,
   signInWithEmailAccount,
   signInWithGoogleAccount,
   signOutAccount,
@@ -119,7 +118,6 @@ interface BibleStoreValue {
   activateDemoJourney: () => Promise<void>;
   resetAllData: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  signInWithApple: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<void>;
   updateDisplayName: (displayName: string) => Promise<void>;
@@ -804,14 +802,6 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, []);
 
-  const signInWithApple = useCallback(async () => {
-    try {
-      await signInWithAppleAccount();
-    } catch (err) {
-      throw new Error(formatAuthError(err));
-    }
-  }, []);
-
   const signInWithEmail = useCallback(async (email: string, password: string) => {
     try {
       await signInWithEmailAccount(email, password);
@@ -990,7 +980,6 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     activateDemoJourney,
     resetAllData,
     signInWithGoogle,
-    signInWithApple,
     signInWithEmail,
     signUpWithEmail,
     updateDisplayName,

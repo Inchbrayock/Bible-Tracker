@@ -22,24 +22,39 @@ export function getResolvedColorScheme(pref: ColorSchemePreference): 'light' | '
   return getSystemPrefersDark() ? 'dark' : 'light';
 }
 
-function ensureColorSchemeMeta(): HTMLMetaElement | null {
+const LIGHT_THEME_COLOR = '#F7F7F4';
+const DARK_THEME_COLOR = '#12151B';
+
+function ensureMeta(name: string, fallbackContent: string): HTMLMetaElement | null {
   if (typeof document === 'undefined') return null;
-  let meta = document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]');
+  let meta = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
   if (!meta && document.head) {
     meta = document.createElement('meta');
-    meta.setAttribute('name', 'color-scheme');
-    meta.setAttribute('content', 'light dark');
+    meta.setAttribute('name', name);
+    meta.setAttribute('content', fallbackContent);
     document.head.appendChild(meta);
   }
   return meta;
 }
 
-export function applyColorScheme(pref: ColorSchemePreference): void {
-  const meta = ensureColorSchemeMeta();
-  const metaValue = pref === 'system' ? 'light dark' : pref;
-  if (meta) {
-    meta.setAttribute('content', metaValue);
+function syncDocumentThemeMeta(pref: ColorSchemePreference): void {
+  const colorSchemeMeta = ensureMeta('color-scheme', 'light dark');
+  if (colorSchemeMeta) {
+    colorSchemeMeta.setAttribute('content', pref === 'system' ? 'light dark' : pref);
   }
+
+  const themeColorMeta = ensureMeta('theme-color', LIGHT_THEME_COLOR);
+  if (themeColorMeta) {
+    const resolved = getResolvedColorScheme(pref);
+    themeColorMeta.setAttribute(
+      'content',
+      resolved === 'dark' ? DARK_THEME_COLOR : LIGHT_THEME_COLOR
+    );
+  }
+}
+
+export function applyColorScheme(pref: ColorSchemePreference): void {
+  syncDocumentThemeMeta(pref);
   try {
     if (pref === 'system') {
       localStorage.removeItem(STORAGE_KEY);
@@ -57,10 +72,7 @@ export function subscribeColorSchemeChanges(
   const handleStorage = (e: StorageEvent) => {
     if (e.key === STORAGE_KEY) {
       const next = getStoredColorScheme();
-      const meta = document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]');
-      if (meta) {
-        meta.setAttribute('content', next === 'system' ? 'light dark' : next);
-      }
+      syncDocumentThemeMeta(next);
       onChange(next);
     }
   };
@@ -69,6 +81,7 @@ export function subscribeColorSchemeChanges(
   const handleSystemChange = () => {
     // Only re-notify if user has NOT explicitly pinned light or dark
     if (getStoredColorScheme() === 'system') {
+      syncDocumentThemeMeta('system');
       onChange('system');
     }
   };

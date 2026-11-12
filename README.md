@@ -34,12 +34,12 @@ The app works immediately with local browser storage. To enable account sign-in 
    - `VITE_FIREBASE_STORAGE_BUCKET`
    - `VITE_FIREBASE_MESSAGING_SENDER_ID`
    - `VITE_FIREBASE_APP_ID`
-2. Enable **Email/Password**, **Google**, and (for iOS App Store compliance) **Apple** sign-in in Firebase Authentication.
+2. Enable **Email/Password** and **Google** sign-in in Firebase Authentication.
 3. Deploy the included `firestore.rules` and `firestore.indexes.json` using the Firebase CLI.
 
-## Mobile Apps (Android & iOS with Capacitor)
+## Mobile App (Android APK & iPhone Safari PWA)
 
-Selah wraps the compiled Vite app (`dist/`) for iOS and Android via Capacitor using bundle ID `com.selah.bible`.
+Selah wraps the compiled Vite app (`dist/`) as a native Android APK via Capacitor using bundle ID `com.selah.bible`, while iPhone uses the free Safari "Add to Home Screen" web app (no Mac or Apple Developer account required).
 
 ### Android (GitHub Actions APK or Local Android Studio)
 
@@ -56,19 +56,10 @@ Selah wraps the compiled Vite app (`dist/`) for iOS and Android via Capacitor us
      npm run cap:android
      ```
 
-### iOS (macOS Xcode or GitHub Actions)
+### iOS (Safari "Add to Home Screen" — Free, No Apple Developer Account Required)
 
-1. In Firebase Console, add an **iOS app** with bundle ID `com.selah.bible`, and enable the **Apple** sign-in provider in Firebase Authentication.
-2. In Apple Developer Portal, enable the **Sign in with Apple** capability for App ID `com.selah.bible` (matches `ios/App/App/App.entitlements`).
-3. Download `GoogleService-Info.plist` and add its `REVERSED_CLIENT_ID` URL scheme to `ios/App/App/Info.plist` if opening locally in Xcode (`npm run cap:ios`).
-4. **Building iOS from Windows via GitHub Actions:** Run or tag (`v*`) `.github/workflows/ios-release.yml` on `macos-latest`.
-   - Without signing secrets, it runs `npx cap sync ios` and an unsigned iOS Simulator build check.
-   - To export a signed `.ipa` (and optionally upload to TestFlight), add these repository secrets:
-     - Firebase web build env vars (`VITE_FIREBASE_*`) and `GOOGLE_SERVICE_INFO_PLIST_BASE64`
-     - Apple signing: `APPLE_TEAM_ID`, `IOS_CERTIFICATE_BASE64`, `IOS_CERTIFICATE_PASSWORD`, `IOS_PROVISIONING_PROFILE_BASE64`
-     - Optional TestFlight upload: `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`, `APPLE_API_KEY_P8_BASE64`
-
-   > **Note for Windows:** `capacitor.config.ts` uses SwiftPM symlinks for `@capacitor-firebase/authentication`. If `npx cap sync ios` reports an `EPERM` symlink error without Windows Developer Mode, Android syncing still completes cleanly and the macOS CI runner resolves iOS Swift packages cleanly.
+- On iPhone, open the deployed web app in **Safari** and tap **Share > Add to Home Screen**.
+- `index.html` includes `apple-touch-icon.png`, `apple-mobile-web-app-capable`, dynamic `theme-color` matching Dawn/Vesper, `public/manifest.webmanifest`, and a web-only offline service worker (`public/sw.js`, skipped inside Capacitor native builds).
 
 ## Scripts
 
@@ -76,10 +67,9 @@ Selah wraps the compiled Vite app (`dist/`) for iOS and Android via Capacitor us
 - `npm run build` — Type-check with TypeScript (`tsc -b`) and build production assets
 - `npm run preview` — Preview the production bundle locally
 - `npm test` — Run the Vitest unit and component test suite
-- `npm run cap:sync` — Build web assets and sync native Android/iOS Capacitor projects
+- `npm run cap:sync` — Build web assets and sync the Android Capacitor project
 - `npm run cap:android` — Open the Android project in Android Studio
-- `npm run cap:ios` — Open the iOS project in Xcode (macOS)
-- `npm run cap:assets` — Regenerate native app icons and splash screens from `assets/`
+- `npm run cap:assets` — Regenerate native Android app icons and splash screens from `assets/`
 
 ## Tech Stack
 

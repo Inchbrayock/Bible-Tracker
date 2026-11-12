@@ -11,7 +11,7 @@ const config: CapacitorConfig = {
   plugins: {
     FirebaseAuthentication: {
       skipNativeAuth: true,
-      providers: ['google.com', 'apple.com'],
+      providers: ['google.com'],
     },
     SplashScreen: {
       launchAutoHide: false,
@@ -20,17 +20,6 @@ const config: CapacitorConfig = {
     },
     StatusBar: {
       overlaysWebView: true,
-    },
-  },
-  experimental: {
-    ios: {
-      spm: {
-        packageOptions: {
-          '@capacitor-firebase/authentication': {
-            symlink: true,
-          },
-        },
-      },
     },
   },
 };

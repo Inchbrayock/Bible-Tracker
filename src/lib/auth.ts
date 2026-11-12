@@ -1,7 +1,6 @@
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
-  OAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithCredential,
@@ -73,46 +72,6 @@ export async function signInWithGoogleAccount(): Promise<AccountUser> {
   }
 
   const result = await signInWithPopup(services.auth, services.googleProvider);
-  return toAccountUser(result.user);
-}
-
-export async function signInWithAppleAccount(): Promise<AccountUser> {
-  const services = getFirebaseServices();
-  if (!services) {
-    throw new Error('Firebase authentication is not configured.');
-  }
-
-  if (isNativePlatform()) {
-    const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-    const result = await FirebaseAuthentication.signInWithApple({
-      skipNativeAuth: true,
-      scopes: ['email', 'name'],
-    });
-    const idToken = result.credential?.idToken;
-    if (!idToken) {
-      throw new Error('Apple sign-in did not return an identity token.');
-    }
-    const appleProvider = new OAuthProvider('apple.com');
-    const credential = appleProvider.credential({
-      idToken,
-      rawNonce: result.credential?.nonce,
-    });
-    const userCred = await signInWithCredential(services.auth, credential);
-    const nativeName = result.user?.displayName?.trim();
-    if (nativeName && !userCred.user.displayName) {
-      await updateProfile(userCred.user, { displayName: nativeName.slice(0, 100) });
-      return {
-        ...toAccountUser(userCred.user),
-        displayName: nativeName.slice(0, 100),
-      };
-    }
-    return toAccountUser(userCred.user);
-  }
-
-  const appleProvider = new OAuthProvider('apple.com');
-  appleProvider.addScope('email');
-  appleProvider.addScope('name');
-  const result = await signInWithPopup(services.auth, appleProvider);
   return toAccountUser(result.user);
 }
 

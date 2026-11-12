@@ -11,8 +11,7 @@
     "test:watch": "vitest",
     "cap:sync": "npm run build && npx cap sync",
     "cap:android": "npx cap open android",
-    "cap:ios": "npx cap open ios",
-    "cap:assets": "npx capacitor-assets generate --ios --android --iconBackgroundColor #F7F7F4 --iconBackgroundColorDark #12151B --splashBackgroundColor #F7F7F4 --splashBackgroundColorDark #12151B"
+    "cap:assets": "npx capacitor-assets generate --android --iconBackgroundColor #F7F7F4 --iconBackgroundColorDark #12151B --splashBackgroundColor #F7F7F4 --splashBackgroundColorDark #12151B"
   },
   "dependencies": {
     "@capacitor-firebase/authentication": "^8.6.0",
@@ -38,7 +37,6 @@
     "@capacitor/android": "^8.6.2",
     "@capacitor/assets": "^4.0.0",
     "@capacitor/cli": "^8.6.2",
-    "@capacitor/ios": "^8.6.2",
     "@tailwindcss/vite": "^4.1.14",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
