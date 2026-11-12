@@ -204,6 +204,31 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  :where(
+    button:not(:disabled, [aria-disabled="true"]),
+    [role="button"]:not(:disabled, [aria-disabled="true"]),
+    [role="tab"]:not(:disabled, [aria-disabled="true"]),
+    [role="switch"]:not(:disabled, [aria-disabled="true"]),
+    [role="menuitem"]:not(:disabled, [aria-disabled="true"]),
+    [role="checkbox"]:not(:disabled, [aria-disabled="true"]),
+    [role="radio"]:not(:disabled, [aria-disabled="true"]),
+    a:any-link,
+    select:not(:disabled, [aria-disabled="true"]),
+    summary,
+    input:is([type="button"], [type="submit"], [type="reset"], [type="checkbox"], [type="radio"], [type="file"]):not(:disabled, [aria-disabled="true"]),
+    label:has(input:is([type="checkbox"], [type="radio"]):not(:disabled))
+  ) {
+    cursor: pointer;
+  }
+
+  input:not(:disabled)::file-selector-button {
+    cursor: pointer;
+  }
+
+  input:not(:disabled)::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+
   h1, h2, h3, .font-display {
     font-family: var(--font-display);
     text-wrap: balance;
