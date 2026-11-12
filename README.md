@@ -41,16 +41,20 @@ The app works immediately with local browser storage. To enable account sign-in 
 
 Selah wraps the compiled Vite app (`dist/`) for iOS and Android via Capacitor using bundle ID `com.selah.bible`.
 
-### Android (Local Windows / macOS / Linux Build)
+### Android (GitHub Actions APK or Local Android Studio)
 
-1. In Firebase Console, add an **Android app** with package name `com.selah.bible`.
-2. Add your debug and release signing SHA-1 / SHA-256 fingerprints in Firebase Project Settings so native Google Sign-In works.
-3. Download `google-services.json` into `android/app/google-services.json` (gitignored).
-4. Build and open in Android Studio:
-   ```bash
-   npm run cap:sync
-   npm run cap:android
-   ```
+1. **Cloud APK builds (no Android Studio needed on Windows):** Run or tag (`v*`) `.github/workflows/android-apk.yml` on `ubuntu-latest` to download a phone-ready `.apk` artifact (`selah-android-apk`).
+   - Without keystore secrets, it builds a debug-signed `.apk`.
+   - For a signed release `.apk` with Google Sign-In, add these repository secrets:
+     - Firebase web build env vars (`VITE_FIREBASE_*`) and `GOOGLE_SERVICES_JSON_BASE64` (base64 of `android/app/google-services.json`, refreshed after registering your keystore SHA-1)
+     - Release keystore: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
+2. **Local Android Studio builds:**
+   - Ensure `android/app/google-services.json` (gitignored) is present and register your debug/release keystore SHA-1 in Firebase if using Google Sign-In.
+   - Optionally copy a gitignored `android/keystore.properties` (`storeFile`, `storePassword`, `keyAlias`, `keyPassword`) for local signed release builds, then run:
+     ```bash
+     npm run cap:sync
+     npm run cap:android
+     ```
 
 ### iOS (macOS Xcode or GitHub Actions)
 
