@@ -1,6 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../App';
+import { formatShortDate, todayPlainDate } from '../lib/dates';
+
+vi.setConfig({ testTimeout: 15000 });
 
 describe('Selah Bible Sanctuary App UI', () => {
   beforeEach(() => {
@@ -33,6 +36,38 @@ describe('Selah Bible Sanctuary App UI', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Journal & Plans/i }));
     expect(await screen.findByText(/Reading Journal/i)).toBeInTheDocument();
+  });
+
+  it('filters Log History entries by book and chapter, note, and displayed date', async () => {
+    render(<App />);
+    expect(await screen.findByText(/Canonical Journey/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Preview Sample Journey/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/12d streak|days streak/i)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Journal & Plans/i }));
+    expect(await screen.findByText(/Reading Journal/i)).toBeInTheDocument();
+
+    const journalSearch = screen.getByLabelText(/Filter reading journal/i);
+    fireEvent.change(journalSearch, { target: { value: 'Romans 8' } });
+    expect(screen.getByText(/Romans 7–8/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Genesis 1–10/i)).not.toBeInTheDocument();
+
+    fireEvent.change(journalSearch, { target: { value: "God's word" } });
+    expect(screen.getByText(/Psalms 103, 119, 121, 139/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Romans 7–8/i)).not.toBeInTheDocument();
+
+    const todayShort = formatShortDate(todayPlainDate());
+    fireEvent.change(journalSearch, { target: { value: todayShort } });
+    expect(screen.getByText(/Romans 14–16/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Genesis 1–10/i)).not.toBeInTheDocument();
+
+    fireEvent.change(journalSearch, { target: { value: 'zzzz-no-match' } });
+    expect(screen.getByText(/No matching entries/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Reset search$/i }));
+    expect(screen.getByText(/Genesis 1–10/i)).toBeInTheDocument();
   });
 
   it('logs a chapter via Quick Log, unlocks Open the Scroll seal, and opens Book chapter grid', async () => {

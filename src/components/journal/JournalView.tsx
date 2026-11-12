@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
-import { Calendar, Compass, Edit3, ScrollText, Search, Trash2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Calendar, Compass, Edit3, ScrollText, Search, Trash2, X } from 'lucide-react';
 import { BOOKS_BY_ID, DIVISION_META_BY_ID } from '../../data/bibleCanon';
 import { formatPlainDate, todayPlainDate } from '../../lib/dates';
+import { indexReadingLogForSearch, matchesIndexedReadingLog } from '../../lib/logSearch';
 import { formatChapterRanges, parseChapterInput } from '../../lib/progress';
 import { useBibleStore } from '../../store/useBibleStore';
 import type { ReadingLogEntry } from '../../types/bible';
@@ -26,20 +27,25 @@ export const JournalView: React.FC<JournalViewProps> = ({
   const [editError, setEditError] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  const sortedLogs = useMemo(() => {
-    const q = search.trim().toLowerCase();
+  useEffect(() => {
+    setSubTab(initialSubTab);
+  }, [initialSubTab]);
+
+  const indexedLogs = useMemo(() => {
     return [...logs]
+      .filter((log) => Boolean(BOOKS_BY_ID[log.bookId]))
       .sort((a, b) => b.readDate.localeCompare(a.readDate) || b.loggedAt.localeCompare(a.loggedAt))
-      .filter((log) => {
-        if (!q) return true;
-        const book = BOOKS_BY_ID[log.bookId];
-        return (
-          book?.name.toLowerCase().includes(q) ||
-          log.note?.toLowerCase().includes(q) ||
-          log.readDate.includes(q)
-        );
-      });
-  }, [logs, search]);
+      .map((log) => indexReadingLogForSearch(log, BOOKS_BY_ID[log.bookId]));
+  }, [logs]);
+
+  const sortedLogs = useMemo(() => {
+    if (!search.trim()) {
+      return indexedLogs.map((entry) => entry.log);
+    }
+    return indexedLogs
+      .filter((entry) => matchesIndexedReadingLog(entry, search))
+      .map((entry) => entry.log);
+  }, [indexedLogs, search]);
 
   const startEditing = (log: ReadingLogEntry) => {
     setEditingId(log.id);
@@ -75,7 +81,9 @@ export const JournalView: React.FC<JournalViewProps> = ({
             </h1>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
               {subTab === 'journal'
-                ? `${logs.length} reading sessions recorded with notes and calendar dates.`
+                ? search.trim()
+                  ? `Showing ${sortedLogs.length} of ${indexedLogs.length} ${indexedLogs.length === 1 ? 'session' : 'sessions'} matching “${search.trim()}”.`
+                  : `${indexedLogs.length} ${indexedLogs.length === 1 ? 'reading session' : 'reading sessions'} recorded with notes and calendar dates.`
                 : 'Follow a structured path or let your free-form reading automatically mark days complete.'}
             </p>
           </div>
@@ -120,10 +128,26 @@ export const JournalView: React.FC<JournalViewProps> = ({
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape' && search) {
+                  e.preventDefault();
+                  setSearch('');
+                }
+              }}
               aria-label="Filter reading journal"
-              placeholder="Search logs by book, reflection note, or date…"
-              className="folio-input min-h-11 w-full py-2 pl-9 pr-3 text-base placeholder:text-[var(--text-secondary)] sm:min-h-10 sm:text-sm"
+              placeholder="Search logs by book, chapter, reflection note, or date…"
+              className="folio-input min-h-11 w-full py-2 pl-9 pr-10 text-base placeholder:text-[var(--text-secondary)] sm:min-h-10 sm:text-sm [&::-webkit-search-cancel-button]:hidden"
             />
+            {search ? (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                aria-label="Clear search"
+                className="absolute right-1.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            ) : null}
           </div>
         )}
       </section>
@@ -133,13 +157,22 @@ export const JournalView: React.FC<JournalViewProps> = ({
       ) : sortedLogs.length === 0 ? (
         <div className="folio-sheet p-10 text-center">
           <p className="font-display text-xl font-medium text-[var(--text-primary)]">
-            {logs.length === 0 ? 'Your journal awaits its first entry' : 'No matching entries'}
+            {indexedLogs.length === 0 ? 'Your journal awaits its first entry' : 'No matching entries'}
           </p>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            {logs.length === 0
+            {indexedLogs.length === 0
               ? 'Log a chapter from the Sanctuary Dashboard or Books Library.'
-              : 'Try a different search filter.'}
+              : 'Try searching by book, chapter (e.g. Romans 8), note, or date (e.g. Nov 12).'}
           </p>
+          {indexedLogs.length > 0 && search ? (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="mt-4 inline-flex min-h-9 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-surface)]"
+            >
+              Reset search
+            </button>
+          ) : null}
         </div>
       ) : (
         <ul className="folio-sheet divide-y divide-[var(--border-subtle)] overflow-hidden">
