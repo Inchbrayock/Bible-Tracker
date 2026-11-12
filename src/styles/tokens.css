@@ -1,0 +1,404 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    --in-oklab: ;
+    --in-oklch: ;
+
+    /* Dawn Parchment (Light) & Vesper Candlelight (Dark) raw color tokens */
+    --bg-canvas-light: #FAF7F2;
+    --bg-canvas-dark: #12100E;
+
+    --bg-surface-light: #F3EDE2;
+    --bg-surface-dark: #1C1916;
+
+    --bg-elevated-light: #FFFFFF;
+    --bg-elevated-dark: #25211D;
+
+    --bg-subtle-light: #EAE1D2;
+    --bg-subtle-dark: #2E2924;
+
+    --text-primary-light: #1E1B18;
+    --text-primary-dark: #F4EFE6;
+
+    --text-secondary-light: #5C554D;
+    --text-secondary-dark: #B5ACA0;
+
+    --border-subtle-light: #DDD3C3;
+    --border-subtle-dark: #38322B;
+
+    --border-strong-light: #B4A592;
+    --border-strong-dark: #5B5247;
+
+    --accent-gold-light: #9E6E14;
+    --accent-gold-dark: #E6B95C;
+
+    --accent-gold-soft-light: #F3E4C2;
+    --accent-gold-soft-dark: #382C16;
+
+    --accent-sage-light: #225E4F;
+    --accent-sage-dark: #56B499;
+
+    --accent-sage-soft-light: #DCECE6;
+    --accent-sage-soft-dark: #173129;
+
+    --accent-crimson-light: #9E3A2E;
+    --accent-crimson-dark: #E87B6C;
+
+    /* Biblical division ribbon tokens */
+    --div-pentateuch-light: #B87B1E;
+    --div-pentateuch-dark: #E5AA4C;
+    --div-history-light: #A95338;
+    --div-history-dark: #DF8264;
+    --div-wisdom-light: #246A56;
+    --div-wisdom-dark: #58B89C;
+    --div-major-light: #7E3958;
+    --div-major-dark: #D07BA0;
+    --div-minor-light: #8C6A24;
+    --div-minor-dark: #CCA653;
+    --div-gospels-light: #25578B;
+    --div-gospels-dark: #68A4E2;
+    --div-pauline-light: #4A448E;
+    --div-pauline-dark: #948EE2;
+    --div-general-light: #206A73;
+    --div-general-dark: #58B8C4;
+
+    /* Default fallback tokens (light) */
+    --bg-canvas: var(--bg-canvas-light);
+    --bg-surface: var(--bg-surface-light);
+    --bg-elevated: var(--bg-elevated-light);
+    --bg-subtle: var(--bg-subtle-light);
+    --text-primary: var(--text-primary-light);
+    --text-secondary: var(--text-secondary-light);
+    --border-subtle: var(--border-subtle-light);
+    --border-strong: var(--border-strong-light);
+    --color-accent: var(--accent-gold-light);
+    --color-accent-soft: var(--accent-gold-soft-light);
+    --color-sage: var(--accent-sage-light);
+    --color-sage-soft: var(--accent-sage-soft-light);
+    --color-crimson: var(--accent-crimson-light);
+
+    --div-pentateuch: var(--div-pentateuch-light);
+    --div-history: var(--div-history-light);
+    --div-wisdom: var(--div-wisdom-light);
+    --div-major: var(--div-major-light);
+    --div-minor: var(--div-minor-light);
+    --div-gospels: var(--div-gospels-light);
+    --div-pauline: var(--div-pauline-light);
+    --div-general: var(--div-general-light);
+
+    color-scheme: light dark;
+    accent-color: var(--color-accent);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+
+  :root:has(> head > meta[name="color-scheme"][content="dark"]) {
+    color-scheme: dark;
+  }
+
+  :root:has(> head > meta[name="color-scheme"][content="light"]) {
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not(:has(> head > meta[name="color-scheme"][content="light"])) {
+      --bg-canvas: var(--bg-canvas-dark);
+      --bg-surface: var(--bg-surface-dark);
+      --bg-elevated: var(--bg-elevated-dark);
+      --bg-subtle: var(--bg-subtle-dark);
+      --text-primary: var(--text-primary-dark);
+      --text-secondary: var(--text-secondary-dark);
+      --border-subtle: var(--border-subtle-dark);
+      --border-strong: var(--border-strong-dark);
+      --color-accent: var(--accent-gold-dark);
+      --color-accent-soft: var(--accent-gold-soft-dark);
+      --color-sage: var(--accent-sage-dark);
+      --color-sage-soft: var(--accent-sage-soft-dark);
+      --color-crimson: var(--accent-crimson-dark);
+
+      --div-pentateuch: var(--div-pentateuch-dark);
+      --div-history: var(--div-history-dark);
+      --div-wisdom: var(--div-wisdom-dark);
+      --div-major: var(--div-major-dark);
+      --div-minor: var(--div-minor-dark);
+      --div-gospels: var(--div-gospels-dark);
+      --div-pauline: var(--div-pauline-dark);
+      --div-general: var(--div-general-dark);
+    }
+  }
+
+  @supports (color: light-dark(white, black)) {
+    :root {
+      --bg-canvas: light-dark(var(--bg-canvas-light), var(--bg-canvas-dark));
+      --bg-surface: light-dark(var(--bg-surface-light), var(--bg-surface-dark));
+      --bg-elevated: light-dark(var(--bg-elevated-light), var(--bg-elevated-dark));
+      --bg-subtle: light-dark(var(--bg-subtle-light), var(--bg-subtle-dark));
+      --text-primary: light-dark(var(--text-primary-light), var(--text-primary-dark));
+      --text-secondary: light-dark(var(--text-secondary-light), var(--text-secondary-dark));
+      --border-subtle: light-dark(var(--border-subtle-light), var(--border-subtle-dark));
+      --border-strong: light-dark(var(--border-strong-light), var(--border-strong-dark));
+      --color-accent: light-dark(var(--accent-gold-light), var(--accent-gold-dark));
+      --color-accent-soft: light-dark(var(--accent-gold-soft-light), var(--accent-gold-soft-dark));
+      --color-sage: light-dark(var(--accent-sage-light), var(--accent-sage-dark));
+      --color-sage-soft: light-dark(var(--accent-sage-soft-light), var(--accent-sage-soft-dark));
+      --color-crimson: light-dark(var(--accent-crimson-light), var(--accent-crimson-dark));
+
+      --div-pentateuch: light-dark(var(--div-pentateuch-light), var(--div-pentateuch-dark));
+      --div-history: light-dark(var(--div-history-light), var(--div-history-dark));
+      --div-wisdom: light-dark(var(--div-wisdom-light), var(--div-wisdom-dark));
+      --div-major: light-dark(var(--div-major-light), var(--div-major-dark));
+      --div-minor: light-dark(var(--div-minor-light), var(--div-minor-dark));
+      --div-gospels: light-dark(var(--div-gospels-light), var(--div-gospels-dark));
+      --div-pauline: light-dark(var(--div-pauline-light), var(--div-pauline-dark));
+      --div-general: light-dark(var(--div-general-light), var(--div-general-dark));
+    }
+  }
+
+  @supports (linear-gradient(in oklab, white, black)) {
+    :root {
+      --in-oklab: in oklab;
+      --in-oklch: in oklch;
+    }
+  }
+
+  html {
+    font-family: var(--font-sans);
+    background-color: var(--bg-canvas);
+    color: var(--text-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--bg-canvas);
+    background-image:
+      radial-gradient(
+        ellipse 80% 50% at 50% -10%,
+        color-mix(in oklab, var(--color-accent) 11%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        ellipse 60% 40% at 95% 15%,
+        color-mix(in oklab, var(--color-sage) 8%, transparent),
+        transparent 70%
+      );
+    color: var(--text-primary);
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: var(--font-display);
+    text-wrap: balance;
+  }
+
+  :where(a:any-link, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--color-accent) 28%, transparent);
+    color: var(--text-primary);
+  }
+
+  /* Native top-layer modal dialogs with smooth entry/exit & scroll containment */
+  dialog:modal {
+    overscroll-behavior: contain;
+    margin: auto;
+    border: 1px solid var(--border-subtle);
+    background-color: var(--bg-elevated);
+    color: var(--text-primary);
+    padding: 0;
+    max-inline-size: min(94vw, 48rem);
+    max-block-size: min(90dvh, 52rem);
+    border-radius: 1.25rem;
+    box-shadow:
+      0 24px 60px -12px rgb(0 0 0 / 0.34),
+      0 0 0 1px color-mix(in oklab, var(--color-accent) 14%, transparent);
+    opacity: 0;
+    transition-property: opacity, transform, display, overlay;
+    transition-duration: 0.24s;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    transition-behavior: allow-discrete;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transform: translateY(10px) scale(0.97);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition-duration: 0.1s;
+    }
+  }
+
+  dialog:modal::backdrop {
+    overflow: hidden;
+    overscroll-behavior: contain;
+    background-color: rgb(15 12 9 / 0);
+    backdrop-filter: blur(0px);
+    transition-property: background-color, backdrop-filter, display, overlay;
+    transition-duration: 0.24s;
+    transition-timing-function: ease-out;
+    transition-behavior: allow-discrete;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition-duration: 0.1s;
+    }
+  }
+
+  dialog[open]:where(:not([data-closing])) {
+    opacity: 1;
+
+    @starting-style {
+      opacity: 0;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      transform: translateY(0) scale(1);
+
+      @starting-style {
+        transform: translateY(12px) scale(0.96);
+      }
+    }
+
+    &::backdrop {
+      background-color: rgb(15 12 9 / 0.56);
+      backdrop-filter: blur(5px);
+
+      @starting-style {
+        background-color: rgb(15 12 9 / 0);
+        backdrop-filter: blur(0px);
+      }
+    }
+  }
+}
+
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
+.skip-link:focus {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100;
+  padding: 0.625rem 1rem;
+  border-radius: 0.75rem;
+  background-color: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 2px solid var(--color-accent);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 10px 25px rgb(0 0 0 / 0.2);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sanctuary-card {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 1.125rem;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 8px 24px -8px rgb(0 0 0 / 0.06);
+}
+
+.sanctuary-surface {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Medallion shimmer sweep & ambient sanctuary glow */
+@keyframes sanctuary-sheen {
+  0% {
+    transform: translateX(-140%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(240%) skewX(-20deg);
+  }
+}
+
+@keyframes ember-pulse {
+  0%, 100% {
+    transform: scale(1) translateY(0);
+    opacity: 0.92;
+  }
+  50% {
+    transform: scale(1.07) translateY(-1px);
+    opacity: 1;
+  }
+}
+
+@keyframes halo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lamp-flame-anim {
+  transform-origin: center bottom;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: ember-pulse 2.6s ease-in-out infinite;
+  }
+}
+
+.halo-spin-anim {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: halo-spin 22s linear infinite;
+  }
+}
+
+.sheen-overlay {
+  position: relative;
+  overflow: hidden;
+}
+
+.sheen-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, white 30%, transparent),
+    transparent
+  );
+  transform: translateX(-140%) skewX(-20deg);
+  pointer-events: none;
+}
+
+.sheen-overlay:hover::after {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: sanctuary-sheen 0.85s ease-out;
+  }
+}
+
+@media (forced-colors: active) {
+  .sanctuary-card,
+  .sanctuary-surface,
+  dialog:modal {
+    border: 1px solid CanvasText;
+  }
+  .chapter-tile-read {
+    outline: 2px solid Highlight;
+  }
+}
