@@ -42,6 +42,12 @@ const GoogleMark: React.FC = () => (
   </svg>
 );
 
+const AppleMark: React.FC = () => (
+  <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.08ZM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25Z" />
+  </svg>
+);
+
 function getInitials(displayName: string | null, email: string | null): string {
   const source = (displayName || email || 'S').trim();
   const parts = source.split(/\s+/).filter(Boolean);
@@ -63,6 +69,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
     lastSyncedAt,
     pendingMerge,
     signInWithGoogle,
+    signInWithApple,
     signInWithEmail,
     signUpWithEmail,
     updateDisplayName,
@@ -94,15 +101,18 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
-  const handleGoogleSignIn = async () => {
+  const runProviderSignIn = async (
+    signInFn: () => Promise<void>,
+    fallbackMessage: string
+  ) => {
     setErrorMsg(null);
     setStatusMsg(null);
     setSubmitting(true);
     try {
-      await signInWithGoogle();
+      await signInFn();
       setPassword('');
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Google sign-in failed.');
+      setErrorMsg(err instanceof Error ? err.message : fallbackMessage);
     } finally {
       setSubmitting(false);
     }
@@ -462,15 +472,27 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                 </div>
               )}
 
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => void handleGoogleSignIn()}
-                className="flex min-h-11 w-full items-center justify-center gap-2.5 rounded-md border border-[var(--border-strong)] bg-[var(--bg-canvas)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] disabled:opacity-60 sm:min-h-10"
-              >
-                <GoogleMark />
-                <span>Continue with Google</span>
-              </button>
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => void runProviderSignIn(signInWithGoogle, 'Google sign-in failed.')}
+                  className="flex min-h-11 w-full items-center justify-center gap-2.5 rounded-md border border-[var(--border-strong)] bg-[var(--bg-canvas)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] disabled:opacity-60 sm:min-h-10"
+                >
+                  <GoogleMark />
+                  <span>Continue with Google</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => void runProviderSignIn(signInWithApple, 'Apple sign-in failed.')}
+                  className="flex min-h-11 w-full items-center justify-center gap-2.5 rounded-md border border-[var(--border-strong)] bg-[var(--bg-canvas)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] disabled:opacity-60 sm:min-h-10"
+                >
+                  <AppleMark />
+                  <span>Continue with Apple</span>
+                </button>
+              </div>
 
               <div className="relative flex items-center py-1">
                 <div className="flex-grow border-t border-[var(--border-subtle)]" />

@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { BookOpen, Cloud, Download, Monitor, Moon, Sun, Trash2, Upload, X } from 'lucide-react';
+import { exportSanctuaryBackupFile } from '../../lib/backupFile';
 import { getSystemPrefersDark } from '../../lib/theme';
 import { useBibleStore } from '../../store/useBibleStore';
 import type { ColorSchemePreference } from '../../types/bible';
@@ -36,17 +37,19 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
   const systemDark = getSystemPrefersDark();
 
-  const handleExport = () => {
-    const json = exportBackupJson();
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'selah-sanctuary-backup.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    setStatusMsg('Backup JSON downloaded.');
-    setErrorMsg(null);
+  const handleExport = async () => {
+    try {
+      const json = exportBackupJson();
+      const result = await exportSanctuaryBackupFile(json);
+      setStatusMsg(result.message);
+      setErrorMsg(null);
+    } catch (err) {
+      if (err instanceof Error && /cancel(ed|led)/i.test(err.message)) {
+        return;
+      }
+      setErrorMsg(err instanceof Error ? err.message : 'Could not export backup file.');
+      setStatusMsg(null);
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -290,7 +293,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
             <div className="grid gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
               <button
                 type="button"
-                onClick={handleExport}
+                onClick={() => void handleExport()}
                 className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--border-strong)] sm:min-h-9"
               >
                 <Download className="h-3.5 w-3.5 text-[var(--color-sage)]" aria-hidden="true" />
@@ -308,7 +311,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/json,.json"
+                accept=".json,application/json,text/plain"
                 onChange={(e) => void handleFileChange(e)}
                 className="visually-hidden"
                 aria-label="Choose Selah JSON backup file"

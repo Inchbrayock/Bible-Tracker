@@ -1,7 +1,10 @@
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  OAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
@@ -9,6 +12,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { getFirebaseServices, isFirebaseConfigured } from './firebase';
+import { isNativePlatform } from './nativeShell';
 
 export interface AccountUser {
   uid: string;
@@ -53,7 +57,62 @@ export async function signInWithGoogleAccount(): Promise<AccountUser> {
   if (!services) {
     throw new Error('Firebase authentication is not configured.');
   }
+
+  if (isNativePlatform()) {
+    const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+    const result = await FirebaseAuthentication.signInWithGoogle({
+      skipNativeAuth: true,
+    });
+    const idToken = result.credential?.idToken;
+    if (!idToken) {
+      throw new Error('Google sign-in did not return an identity token.');
+    }
+    const credential = GoogleAuthProvider.credential(idToken, result.credential?.accessToken);
+    const userCred = await signInWithCredential(services.auth, credential);
+    return toAccountUser(userCred.user);
+  }
+
   const result = await signInWithPopup(services.auth, services.googleProvider);
+  return toAccountUser(result.user);
+}
+
+export async function signInWithAppleAccount(): Promise<AccountUser> {
+  const services = getFirebaseServices();
+  if (!services) {
+    throw new Error('Firebase authentication is not configured.');
+  }
+
+  if (isNativePlatform()) {
+    const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+    const result = await FirebaseAuthentication.signInWithApple({
+      skipNativeAuth: true,
+      scopes: ['email', 'name'],
+    });
+    const idToken = result.credential?.idToken;
+    if (!idToken) {
+      throw new Error('Apple sign-in did not return an identity token.');
+    }
+    const appleProvider = new OAuthProvider('apple.com');
+    const credential = appleProvider.credential({
+      idToken,
+      rawNonce: result.credential?.nonce,
+    });
+    const userCred = await signInWithCredential(services.auth, credential);
+    const nativeName = result.user?.displayName?.trim();
+    if (nativeName && !userCred.user.displayName) {
+      await updateProfile(userCred.user, { displayName: nativeName.slice(0, 100) });
+      return {
+        ...toAccountUser(userCred.user),
+        displayName: nativeName.slice(0, 100),
+      };
+    }
+    return toAccountUser(userCred.user);
+  }
+
+  const appleProvider = new OAuthProvider('apple.com');
+  appleProvider.addScope('email');
+  appleProvider.addScope('name');
+  const result = await signInWithPopup(services.auth, appleProvider);
   return toAccountUser(result.user);
 }
 
@@ -113,8 +172,17 @@ export async function sendAccountPasswordReset(email: string): Promise<void> {
 
 export async function signOutAccount(): Promise<void> {
   const services = getFirebaseServices();
-  if (!services) return;
-  await signOut(services.auth);
+  if (services) {
+    await signOut(services.auth);
+  }
+  if (isNativePlatform()) {
+    try {
+      const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+      await FirebaseAuthentication.signOut();
+    } catch {
+      // Ignore native sign-out errors once JS session is cleared
+    }
+  }
 }
 
 export function formatAuthError(error: unknown): string {
@@ -135,16 +203,22 @@ export function formatAuthError(error: unknown): string {
         return 'Too many attempts. Please wait a moment before trying again.';
       case 'auth/popup-closed-by-user':
       case 'auth/cancelled-popup-request':
+      case 'auth/canceled-by-user':
+      case '1001':
+      case 'ERR_CANCELED':
         return 'Sign-in window was closed before completing.';
       case 'auth/popup-blocked':
         return 'Pop-up was blocked by your browser. Allow pop-ups for this site and try again.';
       case 'auth/unauthorized-domain':
-        return 'This domain is not authorized for Google Sign-In in your Firebase project settings.';
+        return 'This domain is not authorized for sign-in in your Firebase project settings.';
       case 'auth/network-request-failed':
         return 'Network error while connecting to Firebase. Check your connection and try again.';
       default:
         break;
     }
+  }
+  if (error instanceof Error && /cancel(ed|led)/i.test(error.message)) {
+    return 'Sign-in window was closed before completing.';
   }
   return error instanceof Error ? error.message : 'Authentication failed. Please try again.';
 }

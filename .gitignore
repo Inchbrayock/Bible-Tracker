@@ -18,3 +18,15 @@ coverage/
 .env.*.local
 .DS_Store
 Thumbs.db
+
+# Native mobile credentials, signing keys, and transient Capacitor SPM symlinks
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist
+ios/App/CapApp-SPM/symlinks/
+*.jks
+*.keystore
+*.p8
+*.p12
+*.mobileprovision
+*.ipa
+

@@ -13,6 +13,7 @@ import {
   persistentMultipleTabManager,
   type Firestore,
 } from 'firebase/firestore';
+import { isNativePlatform } from './nativeShell';
 
 export interface FirebaseServices {
   app: FirebaseApp;
@@ -72,6 +73,7 @@ export function getFirebaseServices(): FirebaseServices | null {
 
   if (
     !emulatorsConnected &&
+    !isNativePlatform() &&
     import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true' &&
     typeof window !== 'undefined' &&
     window.location.hostname === 'localhost'

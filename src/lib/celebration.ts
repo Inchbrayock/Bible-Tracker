@@ -1,4 +1,5 @@
 import confetti from 'canvas-confetti';
+import { triggerNativeHaptic } from './nativeShell';
 
 const SANCTUARY_PALETTE = ['#1D427D', '#7FA9E8', '#265C4B', '#9C6B21', '#F7F7F4'];
 
@@ -18,7 +19,9 @@ function canRenderCanvasConfetti(): boolean {
 }
 
 export function celebrateBookCompleted(enabled: boolean): void {
-  if (!enabled || prefersReducedMotion() || !canRenderCanvasConfetti()) return;
+  if (!enabled || prefersReducedMotion()) return;
+  void triggerNativeHaptic('milestone');
+  if (!canRenderCanvasConfetti()) return;
   void confetti({
     particleCount: 55,
     spread: 68,
@@ -29,7 +32,9 @@ export function celebrateBookCompleted(enabled: boolean): void {
 }
 
 export function celebrateAchievementUnlocked(enabled: boolean, major = false): void {
-  if (!enabled || prefersReducedMotion() || !canRenderCanvasConfetti()) return;
+  if (!enabled || prefersReducedMotion()) return;
+  void triggerNativeHaptic(major ? 'success' : 'milestone');
+  if (!canRenderCanvasConfetti()) return;
   if (major) {
     void confetti({
       particleCount: 95,

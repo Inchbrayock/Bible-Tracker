@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { AchievementModal } from './components/achievements/AchievementModal';
 import { AchievementsView } from './components/achievements/AchievementsView';
@@ -11,6 +11,7 @@ import { LibraryView } from './components/library/LibraryView';
 import { SettingsDialog } from './components/settings/SettingsDialog';
 import { AppHeader, type AppTab } from './components/ui/AppHeader';
 import { CelebrationToast } from './components/ui/CelebrationToast';
+import { hideNativeSplashScreen, subscribeNativeBackButton } from './lib/nativeShell';
 import { BibleStoreProvider, useBibleStore } from './store/useBibleStore';
 import type { AchievementStatus } from './types/bible';
 
@@ -39,6 +40,55 @@ const SanctuaryShell: React.FC = () => {
   } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+
+  const backStateRef = useRef({
+    inspectedAchievement,
+    settingsOpen,
+    accountOpen,
+    openBookId,
+    activeTab,
+  });
+  backStateRef.current = {
+    inspectedAchievement,
+    settingsOpen,
+    accountOpen,
+    openBookId,
+    activeTab,
+  };
+
+  useEffect(() => {
+    if (ready) {
+      void hideNativeSplashScreen();
+    }
+  }, [ready]);
+
+  useEffect(() => {
+    return subscribeNativeBackButton(() => {
+      const state = backStateRef.current;
+      if (state.inspectedAchievement !== null) {
+        setInspectedAchievement(null);
+        return true;
+      }
+      if (state.settingsOpen) {
+        setSettingsOpen(false);
+        return true;
+      }
+      if (state.accountOpen) {
+        setAccountOpen(false);
+        return true;
+      }
+      if (state.openBookId !== null) {
+        setOpenBookId(null);
+        return true;
+      }
+      if (state.activeTab !== 'dashboard') {
+        setJournalInitialTab('journal');
+        setActiveTab('dashboard');
+        return true;
+      }
+      return false;
+    });
+  }, []);
 
   useEffect(() => {
     document.title = TAB_TITLES[activeTab];

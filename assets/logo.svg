@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <defs>
+    <radialGradient id="flameGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D9A043" stop-opacity="0.34" />
+      <stop offset="65%" stop-color="#D9A043" stop-opacity="0.10" />
+      <stop offset="100%" stop-color="#D9A043" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Subtle architectural crest ring inside adaptive icon safe zone -->
+  <circle cx="512" cy="512" r="304" fill="#EFEFE9" stroke="#C9C5B8" stroke-width="8" />
+  <circle cx="512" cy="390" r="145" fill="url(#flameGlow)" />
+
+  <!-- Sanctuary Lamp scaled from 48x48 coordinates -->
+  <g transform="translate(200, 224) scale(13)">
+    <!-- Flame -->
+    <path
+      d="M24 6C24 6 20 11.2 20 14.5C20 16.7 21.8 18.5 24 18.5C26.2 18.5 28 16.7 28 14.5C28 11.2 24 6 24 6Z"
+      fill="#9C6B21"
+    />
+    <path
+      d="M24 10.5C24 10.5 22.3 13 22.3 14.5C22.3 15.4 23.1 16.2 24 16.2C24.9 16.2 25.7 15.4 25.7 14.5C25.7 13 24 10.5 24 10.5Z"
+      fill="#F3C978"
+    />
+    <!-- Wick -->
+    <path
+      d="M24 17V22.5"
+      stroke="#1D427D"
+      stroke-width="1.75"
+      stroke-linecap="round"
+    />
+    <!-- Vessel body -->
+    <path
+      d="M11.5 26C11.5 24.3 12.8 23 14.5 23H33.5C35.2 23 36.5 24.3 36.5 26C36.5 31.3 31.4 35.5 24 35.5C16.6 35.5 11.5 31.3 11.5 26Z"
+      fill="#F7F7F4"
+      stroke="#1D427D"
+      stroke-width="1.85"
+    />
+    <!-- Handle -->
+    <path
+      d="M36 25.5H39.5C41.2 25.5 42.5 26.8 42.5 28.5C42.5 30.2 41.2 31.5 39.5 31.5H35"
+      stroke="#1D427D"
+      stroke-width="1.85"
+      stroke-linecap="round"
+    />
+    <!-- Nozzle spout -->
+    <path
+      d="M12.5 24.5L8 22.5"
+      stroke="#1D427D"
+      stroke-width="1.85"
+      stroke-linecap="round"
+    />
+    <!-- Pedestal -->
+    <path
+      d="M17.5 40H30.5M20.5 35.5L19.5 40M27.5 35.5L28.5 40"
+      stroke="#1D427D"
+      stroke-width="1.85"
+      stroke-linecap="round"
+    />
+  </g>
+</svg>

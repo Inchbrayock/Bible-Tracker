@@ -41,6 +41,7 @@ import {
   formatAuthError,
   isAuthAvailable,
   sendAccountPasswordReset,
+  signInWithAppleAccount,
   signInWithEmailAccount,
   signInWithGoogleAccount,
   signOutAccount,
@@ -51,9 +52,11 @@ import {
 } from '../lib/auth';
 import { celebrateAchievementUnlocked, celebrateBookCompleted } from '../lib/celebration';
 import { todayPlainDate } from '../lib/dates';
+import { syncNativeStatusBar, triggerNativeHaptic } from '../lib/nativeShell';
 import { computeBibleProgress, formatChapterRanges } from '../lib/progress';
 import {
   applyColorScheme,
+  getResolvedColorScheme,
   getStoredColorScheme,
   subscribeColorSchemeChanges,
 } from '../lib/theme';
@@ -116,6 +119,7 @@ interface BibleStoreValue {
   activateDemoJourney: () => Promise<void>;
   resetAllData: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<void>;
   updateDisplayName: (displayName: string) => Promise<void>;
@@ -260,8 +264,13 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   useEffect(() => {
+    void syncNativeStatusBar(getResolvedColorScheme(colorScheme));
+  }, [colorScheme]);
+
+  useEffect(() => {
     const unsubscribe = subscribeColorSchemeChanges((next) => {
       setColorSchemeState(next);
+      void syncNativeStatusBar(getResolvedColorScheme(next));
     });
     return unsubscribe;
   }, []);
@@ -586,6 +595,8 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const isNowCompleted = nextSummary.bookProgressById[book.id]?.completed ?? false;
       if (!wasCompletedBefore && isNowCompleted) {
         celebrateBookCompleted(prefsRef.current.celebrationsEnabled);
+      } else if (prefsRef.current.celebrationsEnabled) {
+        void triggerNativeHaptic('tap');
       }
 
       setAnnouncement(`Logged ${book.name} ${formatChapterRanges(entry.chapters)}.`);
@@ -620,6 +631,9 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         const nextLogs = await removeChaptersFromBookLogs(bookId, [chapter]);
         logsRef.current = nextLogs;
         setLogs(nextLogs);
+        if (prefsRef.current.celebrationsEnabled) {
+          void triggerNativeHaptic('tap');
+        }
         setAnnouncement(`Removed ${book.name} chapter ${chapter} from your logs.`);
 
         const uid = userRef.current?.uid;
@@ -785,6 +799,14 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const signInWithGoogle = useCallback(async () => {
     try {
       await signInWithGoogleAccount();
+    } catch (err) {
+      throw new Error(formatAuthError(err));
+    }
+  }, []);
+
+  const signInWithApple = useCallback(async () => {
+    try {
+      await signInWithAppleAccount();
     } catch (err) {
       throw new Error(formatAuthError(err));
     }
@@ -968,6 +990,7 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     activateDemoJourney,
     resetAllData,
     signInWithGoogle,
+    signInWithApple,
     signInWithEmail,
     signUpWithEmail,
     updateDisplayName,

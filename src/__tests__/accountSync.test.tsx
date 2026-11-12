@@ -84,6 +84,18 @@ vi.mock('../lib/auth', () => ({
     mockState.setCurrentUser(user);
     return user;
   }),
+  signInWithAppleAccount: vi.fn(async () => {
+    const user: AccountUser = {
+      uid: 'apple-uid-1',
+      email: 'reader@privaterelay.appleid.com',
+      displayName: 'Apple Reader',
+      photoURL: null,
+      emailVerified: true,
+      providerIds: ['apple.com'],
+    };
+    mockState.setCurrentUser(user);
+    return user;
+  }),
   signInWithEmailAccount: vi.fn(async (email: string) => {
     const user: AccountUser = {
       uid: 'email-uid-1',
@@ -469,5 +481,18 @@ describe('Firebase Account & Cloud Sync', () => {
     expect(
       await screen.findByText(/Password reset link sent\. Check your inbox\./i)
     ).toBeInTheDocument();
+  }, 15000);
+
+  it('supports signing in with Apple from AccountDialog', async () => {
+    render(<App />);
+    expect(await screen.findByText(/Canonical Journey/i)).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /Sign in to sync your Sanctuary account/i })
+    );
+    fireEvent.click(await screen.findByRole('button', { name: /Continue with Apple/i }));
+
+    expect(await screen.findByText('reader@privaterelay.appleid.com')).toBeInTheDocument();
+    expect((await screen.findAllByText('Apple Reader')).length).toBeGreaterThanOrEqual(1);
   }, 15000);
 });
