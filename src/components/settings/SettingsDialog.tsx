@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { BookOpen, Download, Monitor, Moon, Sun, Trash2, Upload, X } from 'lucide-react';
+import { BookOpen, Cloud, Download, Monitor, Moon, Sun, Trash2, Upload, X } from 'lucide-react';
 import { getSystemPrefersDark } from '../../lib/theme';
 import { useBibleStore } from '../../store/useBibleStore';
 import type { ColorSchemePreference } from '../../types/bible';
@@ -8,10 +8,17 @@ import { ModalDialog } from '../ui/ModalDialog';
 interface SettingsDialogProps {
   open: boolean;
   onClose: () => void;
+  onOpenAccount?: () => void;
 }
 
-export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose }) => {
+export const SettingsDialog: React.FC<SettingsDialogProps> = ({
+  open,
+  onClose,
+  onOpenAccount,
+}) => {
   const {
+    user,
+    syncStatus,
     colorScheme,
     setColorScheme,
     preferences,
@@ -108,7 +115,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
               Sanctuary Settings
             </h2>
             <p className="text-xs text-[var(--text-secondary)]">
-              Appearance, streak cadence, and local JSON backup.
+              Appearance, cloud account sync, streak cadence, and JSON backup.
             </p>
           </div>
           <button
@@ -122,6 +129,40 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({ open, onClose })
         </div>
 
         <div className="space-y-6 overflow-y-auto p-6">
+          {/* Cloud Account */}
+          {onOpenAccount && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5">
+              <div className="flex items-start gap-2.5">
+                <Cloud
+                  className={`mt-0.5 h-4 w-4 shrink-0 ${
+                    user ? 'text-[var(--color-sage)]' : 'text-[var(--color-accent)]'
+                  }`}
+                  aria-hidden="true"
+                />
+                <div>
+                  <p className="text-sm font-medium text-[var(--text-primary)]">
+                    {user ? user.displayName || user.email || 'Signed in' : 'Cloud account sync'}
+                  </p>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    {user
+                      ? `Backing up to ${user.email ?? 'your account'} (${syncStatus}).`
+                      : 'Sign in to save your readings and notes across devices.'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenAccount();
+                }}
+                className="rounded-md border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
+              >
+                {user ? 'Manage account' : 'Sign in'}
+              </button>
+            </div>
+          )}
+
           {/* Theme Swatches */}
           <fieldset>
             <legend className="text-xs font-medium text-[var(--text-secondary)]">

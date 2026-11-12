@@ -69,7 +69,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)] sm:text-base">
                 Record chapters across all 66 books, trace your rhythm across the year, and keep
-                private study notes stored directly in your browser.
+                private study notes synced to your account or saved directly in your browser.
               </p>
             </div>
             <div className="flex flex-wrap gap-3 shrink-0">

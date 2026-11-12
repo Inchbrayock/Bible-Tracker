@@ -11,6 +11,27 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
 };
 
 const FALLBACK_STORAGE_KEY = 'selah-fallback-sanctuary-v1';
+const LOCAL_OWNER_UID_KEY = 'selah-cloud-owner-uid';
+
+export function getLocalOwnerUid(): string | null {
+  try {
+    return localStorage.getItem(LOCAL_OWNER_UID_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setLocalOwnerUid(uid: string | null): void {
+  try {
+    if (uid) {
+      localStorage.setItem(LOCAL_OWNER_UID_KEY, uid);
+    } else {
+      localStorage.removeItem(LOCAL_OWNER_UID_KEY);
+    }
+  } catch {
+    // Ignore storage error
+  }
+}
 
 function createId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -102,15 +123,22 @@ export async function updateReadingLog(
   id: string,
   patch: Partial<Pick<ReadingLogEntry, 'chapters' | 'readDate' | 'note'>>
 ): Promise<void> {
+  const sanitizedPatch: Partial<Pick<ReadingLogEntry, 'chapters' | 'readDate' | 'note'>> = {};
+  if (patch.chapters !== undefined) {
+    sanitizedPatch.chapters = [...new Set(patch.chapters)].sort((a, b) => a - b);
+  }
+  if (patch.readDate !== undefined) {
+    sanitizedPatch.readDate = patch.readDate;
+  }
+  if (patch.note !== undefined) {
+    sanitizedPatch.note = patch.note.trim() || undefined;
+  }
+
   try {
-    await db.readingLogs.update(id, {
-      ...patch,
-      chapters: patch.chapters ? [...new Set(patch.chapters)].sort((a, b) => a - b) : undefined,
-      note: patch.note !== undefined ? (patch.note.trim() || undefined) : undefined,
-    });
+    await db.readingLogs.update(id, sanitizedPatch);
   } catch {
     const current = await readFallback();
-    const updated = current.logs.map((l) => (l.id === id ? { ...l, ...patch } : l));
+    const updated = current.logs.map((l) => (l.id === id ? { ...l, ...sanitizedPatch } : l));
     await writeFallback(updated, current.preferences);
   }
 }

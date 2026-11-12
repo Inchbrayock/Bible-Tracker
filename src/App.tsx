@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { AchievementModal } from './components/achievements/AchievementModal';
 import { AchievementsView } from './components/achievements/AchievementsView';
+import { AccountDialog } from './components/auth/AccountDialog';
+import { MergeBanner } from './components/auth/MergeBanner';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { JournalView } from './components/journal/JournalView';
 import { BookDetailDialog } from './components/library/BookDetailDialog';
@@ -22,6 +24,7 @@ const TAB_TITLES: Record<AppTab, string> = {
 const SanctuaryShell: React.FC = () => {
   const {
     ready,
+    user,
     announcement,
     unlockedQueue,
     dismissUnlockedAchievement,
@@ -34,6 +37,7 @@ const SanctuaryShell: React.FC = () => {
     isNew: boolean;
   } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
 
   useEffect(() => {
     document.title = TAB_TITLES[activeTab];
@@ -49,6 +53,7 @@ const SanctuaryShell: React.FC = () => {
         activeTab={activeTab}
         onSelectTab={setActiveTab}
         onOpenSettings={() => setSettingsOpen(true)}
+        onOpenAccount={() => setAccountOpen(true)}
       />
 
       <main
@@ -56,6 +61,7 @@ const SanctuaryShell: React.FC = () => {
         tabIndex={-1}
         className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10"
       >
+        <MergeBanner />
         {!ready ? (
           <div className="folio-sheet p-8 text-center text-sm text-[var(--text-secondary)]">
             Opening your reading ledger…
@@ -98,7 +104,9 @@ const SanctuaryShell: React.FC = () => {
             Selah
           </span>
           <span>
-            Private, local-first Bible reading ledger across 66 books and 1,189 chapters.
+            {user
+              ? 'Synced Bible reading ledger across 66 books and 1,189 chapters.'
+              : 'Local-first Bible reading ledger with optional cloud account sync across 66 books and 1,189 chapters.'}
           </span>
         </div>
       </footer>
@@ -111,7 +119,13 @@ const SanctuaryShell: React.FC = () => {
         onClose={() => setInspectedAchievement(null)}
       />
 
-      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onOpenAccount={() => setAccountOpen(true)}
+      />
+
+      <AccountDialog open={accountOpen} onClose={() => setAccountOpen(false)} />
 
       <CelebrationToast
         queue={unlockedQueue}

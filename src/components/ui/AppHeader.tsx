@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Award, BookOpen, Compass, ScrollText, Settings } from 'lucide-react';
+import { Award, BookOpen, Compass, ScrollText, Settings, User } from 'lucide-react';
 import { useBibleStore } from '../../store/useBibleStore';
 import { SanctuaryLamp } from './SanctuaryLamp';
 
@@ -10,6 +10,7 @@ interface AppHeaderProps {
   activeTab: AppTab;
   onSelectTab: (tab: AppTab) => void;
   onOpenSettings: () => void;
+  onOpenAccount: () => void;
 }
 
 const NAV_ITEMS: {
@@ -27,9 +28,23 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   activeTab,
   onSelectTab,
   onOpenSettings,
+  onOpenAccount,
 }) => {
-  const { summary, achievements } = useBibleStore();
+  const { summary, achievements, user, authLoading, syncStatus } = useBibleStore();
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
+
+  const accountLabel = user
+    ? (user.displayName?.trim().split(/\s+/)[0] ||
+        user.email?.split('@')[0] ||
+        'Account')
+    : 'Sign in';
+
+  const syncDotClass =
+    syncStatus === 'synced'
+      ? 'bg-[var(--color-sage)]'
+      : syncStatus === 'error'
+        ? 'bg-[var(--color-crimson)]'
+        : 'bg-[var(--color-lamp)]';
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
@@ -96,12 +111,38 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </nav>
 
         {/* Actions */}
-        <div className="order-2 flex items-center gap-3 py-1 lg:order-3 lg:py-3">
+        <div className="order-2 flex items-center gap-2 py-1 lg:order-3 lg:py-3">
           {summary.currentStreak > 0 && (
             <span className="hidden text-xs font-medium text-[var(--text-secondary)] tabular-nums md:inline lg:hidden xl:inline">
               {summary.currentStreak}d streak
             </span>
           )}
+          <button
+            type="button"
+            onClick={onOpenAccount}
+            disabled={authLoading}
+            aria-label={
+              user
+                ? 'Open account and cloud sync'
+                : 'Sign in to sync your Sanctuary account'
+            }
+            className="inline-flex min-h-9 items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-1.5 text-sm font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--bg-surface)] disabled:opacity-60"
+          >
+            {user ? (
+              <>
+                <span
+                  aria-hidden="true"
+                  className={`h-2 w-2 rounded-full ${syncDotClass}`}
+                />
+                <span className="max-w-24 truncate">{accountLabel}</span>
+              </>
+            ) : (
+              <>
+                <User className="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
+                <span className="hidden sm:inline">{authLoading ? 'Loading…' : accountLabel}</span>
+              </>
+            )}
+          </button>
           <button
             type="button"
             onClick={onOpenSettings}

@@ -11,6 +11,7 @@ export default defineConfig({
           react: ['react', 'react-dom'],
           motion: ['motion'],
           storage: ['dexie', 'temporal-polyfill'],
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
         },
       },
     },
