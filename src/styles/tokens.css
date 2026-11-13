@@ -426,6 +426,12 @@
       flex: 260 1 0%;
     }
   }
+
+  @media (min-width: 1024px) {
+    .heatmap-week-grid {
+      grid-template-columns: repeat(var(--heatmap-weeks, 52), minmax(0, 1fr));
+    }
+  }
 }
 
 @media (prefers-color-scheme: dark) {

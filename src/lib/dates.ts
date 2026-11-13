@@ -58,23 +58,35 @@ export function formatShortDate(isoDate: string): string {
   return parsePlainDate(isoDate).toLocaleString('en-US', { month: 'short', day: 'numeric' });
 }
 
-/**
- * Generates an array of YYYY-MM-DD strings aligned to Sunday..Saturday columns
- * covering the last `weeks` weeks ending on `endDateIso`.
- */
-export function buildHeatmapCalendar(endDateIso: string, weeks = 52): {
-  days: { date: string; dayOfWeekIndex: number; weekIndex: number; isFuture: boolean }[];
-  monthLabels: { weekIndex: number; label: string }[];
-} {
-  const end = parsePlainDate(endDateIso);
-  // Convert ISO dayOfWeek (1=Mon..7=Sun) to Sunday-first index (0=Sun..6=Sat)
-  const endSundayOffset = end.dayOfWeek === 7 ? 0 : end.dayOfWeek;
-  const endWeekSaturday = end.add({ days: 6 - endSundayOffset });
-  const totalDays = weeks * 7;
-  const startSunday = endWeekSaturday.subtract({ days: totalDays - 1 });
+export interface HeatmapDay {
+  date: string;
+  dayOfWeekIndex: number;
+  weekIndex: number;
+  isFuture: boolean;
+  isOutsideRange: boolean;
+}
 
-  const days: { date: string; dayOfWeekIndex: number; weekIndex: number; isFuture: boolean }[] = [];
-  const monthLabels: { weekIndex: number; label: string }[] = [];
+export interface HeatmapMonthLabel {
+  weekIndex: number;
+  label: string;
+}
+
+export interface HeatmapCalendarData {
+  days: HeatmapDay[];
+  monthLabels: HeatmapMonthLabel[];
+  weekCount: number;
+}
+
+function buildHeatmapGrid(
+  startSunday: PolyfillTemporal.PlainDate,
+  weekCount: number,
+  today: PolyfillTemporal.PlainDate,
+  restrictYear?: number
+): HeatmapCalendarData {
+  const T = getTemporal();
+  const totalDays = weekCount * 7;
+  const days: HeatmapDay[] = [];
+  const monthLabels: HeatmapMonthLabel[] = [];
   let lastMonth = -1;
 
   for (let i = 0; i < totalDays; i++) {
@@ -82,9 +94,10 @@ export function buildHeatmapCalendar(endDateIso: string, weeks = 52): {
     const weekIndex = Math.floor(i / 7);
     const dayOfWeekIndex = i % 7;
     const dateStr = current.toString();
-    const isFuture = getTemporal().PlainDate.compare(current, end) > 0;
+    const isOutsideRange = restrictYear !== undefined && current.year !== restrictYear;
+    const isFuture = T.PlainDate.compare(current, today) > 0;
 
-    if (dayOfWeekIndex === 0 && current.month !== lastMonth) {
+    if (!isOutsideRange && dayOfWeekIndex === 0 && current.month !== lastMonth) {
       monthLabels.push({
         weekIndex,
         label: current.toLocaleString('en-US', { month: 'short' }),
@@ -92,8 +105,48 @@ export function buildHeatmapCalendar(endDateIso: string, weeks = 52): {
       lastMonth = current.month;
     }
 
-    days.push({ date: dateStr, dayOfWeekIndex, weekIndex, isFuture });
+    days.push({ date: dateStr, dayOfWeekIndex, weekIndex, isFuture, isOutsideRange });
   }
 
-  return { days, monthLabels };
+  return { days, monthLabels, weekCount };
+}
+
+/**
+ * Generates an array of YYYY-MM-DD strings aligned to Sunday..Saturday columns
+ * covering the last `weeks` weeks ending on `endDateIso`.
+ */
+export function buildHeatmapCalendar(endDateIso: string, weeks = 52): HeatmapCalendarData {
+  const end = parsePlainDate(endDateIso);
+  // Convert ISO dayOfWeek (1=Mon..7=Sun) to Sunday-first index (0=Sun..6=Sat)
+  const endSundayOffset = end.dayOfWeek === 7 ? 0 : end.dayOfWeek;
+  const endWeekSaturday = end.add({ days: 6 - endSundayOffset });
+  const totalDays = weeks * 7;
+  const startSunday = endWeekSaturday.subtract({ days: totalDays - 1 });
+
+  return buildHeatmapGrid(startSunday, weeks, end);
+}
+
+/**
+ * Generates an array of YYYY-MM-DD strings aligned to Sunday..Saturday columns
+ * covering the full calendar `year`, marking padding days outside `year` via `isOutsideRange`.
+ */
+export function buildYearHeatmapCalendar(
+  year: number,
+  todayIso = todayPlainDate()
+): HeatmapCalendarData {
+  const T = getTemporal();
+  const today = parsePlainDate(todayIso);
+  const jan1 = T.PlainDate.from({ year, month: 1, day: 1 });
+  const dec31 = T.PlainDate.from({ year, month: 12, day: 31 });
+
+  const startOffset = jan1.dayOfWeek === 7 ? 0 : jan1.dayOfWeek;
+  const startSunday = jan1.subtract({ days: startOffset });
+
+  const endOffset = dec31.dayOfWeek === 7 ? 0 : dec31.dayOfWeek;
+  const endSaturday = dec31.add({ days: 6 - endOffset });
+
+  const totalDays = startSunday.until(endSaturday, { largestUnit: 'day' }).days + 1;
+  const weekCount = Math.round(totalDays / 7);
+
+  return buildHeatmapGrid(startSunday, weekCount, today, year);
 }

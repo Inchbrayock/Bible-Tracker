@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../App';
-import { formatShortDate, todayPlainDate } from '../lib/dates';
+import { formatPlainDate, formatShortDate, todayPlainDate } from '../lib/dates';
 
 vi.setConfig({ testTimeout: 15000 });
 
@@ -185,5 +185,101 @@ describe('Selah Bible Sanctuary App UI', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /All plans/i }));
     expect(await screen.findByText(/Guided Reading Plans/i)).toBeInTheDocument();
+  });
+
+  it('filters 52-Week Reading Cadence heatmap, summary, and monthly table by year', async () => {
+    const today = todayPlainDate();
+    const currentYear = Number(today.slice(0, 4));
+    const pastYear = currentYear - 2;
+    const pastDate = `${pastYear}-06-15`;
+    const pastMonth = `${pastYear}-06`;
+    const currentMonth = today.slice(0, 7);
+
+    render(<App />);
+    expect(await screen.findByText(/Canonical Journey/i)).toBeInTheDocument();
+
+    // Log 3 chapters in a past year via Log a Reading form
+    fireEvent.change(screen.getByLabelText(/^Chapters$/i), { target: { value: '1-3' } });
+    fireEvent.change(screen.getByLabelText(/^Date read$/i), { target: { value: pastDate } });
+    fireEvent.click(screen.getByRole('button', { name: /Log Passage/i }));
+
+    await waitFor(() => {
+      expect(getWholeBibleChapterReadout(3)).toBeInTheDocument();
+    });
+
+    // Log 1 chapter today via Quick Log
+    fireEvent.click(screen.getByRole('button', { name: /Quick Log: John 4/i }));
+    await waitFor(() => {
+      expect(getWholeBibleChapterReadout(4)).toBeInTheDocument();
+    });
+
+    const heatmapSection = screen.getByRole('region', { name: /52-Week Reading Cadence/i });
+    const yearFilterGroup = within(heatmapSection).getByRole('group', {
+      name: /Filter reading cadence by year/i,
+    });
+
+    const rollingBtn = within(yearFilterGroup).getByRole('button', { name: /Last 52 weeks/i });
+    const currentYearBtn = within(yearFilterGroup).getByRole('button', {
+      name: String(currentYear),
+    });
+    const pastYearBtn = within(yearFilterGroup).getByRole('button', { name: String(pastYear) });
+
+    // Default rolling 52 weeks excludes the 2-year-old session
+    expect(rollingBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      within(heatmapSection).getByText(/1 active reading day \(1 chapter\)/i)
+    ).toBeInTheDocument();
+
+    // Open Monthly summary table and verify rolling view shows currentMonth only
+    fireEvent.click(within(heatmapSection).getByRole('button', { name: /Monthly summary table/i }));
+    expect(await within(heatmapSection).findByText(currentMonth)).toBeInTheDocument();
+    expect(within(heatmapSection).queryByText(pastMonth)).not.toBeInTheDocument();
+
+    // Switch to pastYear
+    fireEvent.click(pastYearBtn);
+    expect(pastYearBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      within(heatmapSection).getByRole('grid', {
+        name: new RegExp(`${pastYear} Bible reading activity`, 'i'),
+      })
+    ).toBeInTheDocument();
+    expect(
+      within(heatmapSection).getByText(
+        new RegExp(`In ${pastYear}: 1 active reading day \\(3 chapters\\)`, 'i')
+      )
+    ).toBeInTheDocument();
+    expect(within(heatmapSection).getByText(pastMonth)).toBeInTheDocument();
+    expect(within(heatmapSection).queryByText(currentMonth)).not.toBeInTheDocument();
+
+    const pastSquare = within(heatmapSection).getByRole('button', {
+      name: `${formatPlainDate(pastDate)}: 3 chapters read`,
+    });
+    fireEvent.click(pastSquare);
+    expect(
+      within(heatmapSection).getByText(
+        (_, el) =>
+          el?.tagName === 'SPAN' &&
+          el.textContent === `${formatPlainDate(pastDate)} — 3 chapters read`
+      )
+    ).toBeInTheDocument();
+
+    // Switch to currentYear and verify readout resets & currentYear data displays
+    fireEvent.click(currentYearBtn);
+    expect(currentYearBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      within(heatmapSection).getByText(/Tap or hover any day square to inspect chapters logged/i)
+    ).toBeInTheDocument();
+    expect(
+      within(heatmapSection).getByRole('grid', {
+        name: new RegExp(`${currentYear} Bible reading activity`, 'i'),
+      })
+    ).toBeInTheDocument();
+    expect(
+      within(heatmapSection).getByText(
+        new RegExp(`In ${currentYear}: 1 active reading day \\(1 chapter\\)`, 'i')
+      )
+    ).toBeInTheDocument();
+    expect(within(heatmapSection).getByText(currentMonth)).toBeInTheDocument();
+    expect(within(heatmapSection).queryByText(pastMonth)).not.toBeInTheDocument();
   });
 });
