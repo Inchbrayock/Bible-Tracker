@@ -43,8 +43,8 @@ Selah wraps the compiled Vite app (`dist/`) as a native Android APK via Capacito
 
 ### Android (GitHub Actions APK or Local Android Studio)
 
-1. **Cloud APK builds (no Android Studio needed on Windows):** Run or tag (`v*`) `.github/workflows/android-apk.yml` on `ubuntu-latest` to download a phone-ready `.apk` artifact (`selah-android-apk`).
-   - Without keystore secrets, it builds a debug-signed `.apk`.
+1. **Cloud APK builds & automatic in-app updates:** Pushing a `v*` tag runs `.github/workflows/android-apk.yml` on `ubuntu-latest`, attaches the signed `.apk` and `update.json` directly to the GitHub Release, and installed Android builds automatically check, download, verify, and prompt to install newer releases (configurable in **Sanctuary Settings → App updates**).
+   - Without keystore secrets, manual workflow runs fall back to a debug-signed `.apk`.
    - For a signed release `.apk` with Google Sign-In, add these repository secrets:
      - Firebase web build env vars (`VITE_FIREBASE_*`) and `GOOGLE_SERVICES_JSON_BASE64` (base64 of `android/app/google-services.json`, refreshed after registering your keystore SHA-1)
      - Release keystore: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`

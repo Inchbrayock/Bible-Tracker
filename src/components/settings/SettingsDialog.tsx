@@ -1,7 +1,19 @@
 import React, { useRef, useState } from 'react';
-import { BookOpen, Cloud, Download, Monitor, Moon, Sun, Trash2, Upload, X } from 'lucide-react';
+import {
+  BookOpen,
+  Cloud,
+  Download,
+  Monitor,
+  Moon,
+  RefreshCw,
+  Sun,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-react';
 import { exportSanctuaryBackupFile } from '../../lib/backupFile';
 import { getSystemPrefersDark } from '../../lib/theme';
+import { useAppUpdater } from '../../lib/useAppUpdater';
 import { useBibleStore } from '../../store/useBibleStore';
 import type { ColorSchemePreference } from '../../types/bible';
 import { ModalDialog } from '../ui/ModalDialog';
@@ -29,6 +41,19 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
     activateDemoJourney,
     resetAllData,
   } = useBibleStore();
+  const {
+    currentVersion,
+    currentBuild,
+    isAndroidNative,
+    autoUpdateEnabled,
+    setAutoUpdateEnabled,
+    status: updateStatus,
+    downloadProgress,
+    availableUpdate,
+    errorMessage: updateErrorMessage,
+    checkForUpdates,
+    applyUpdate,
+  } = useAppUpdater();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
@@ -382,6 +407,101 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* App Updates */}
+          <div className="space-y-3 border-t border-[var(--border-subtle)] pt-5">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="font-display text-base font-medium text-[var(--text-primary)]">
+                App updates
+              </h3>
+              <span className="font-mono text-xs text-[var(--text-secondary)]">
+                v{currentVersion}
+                {currentBuild !== null ? ` (build ${currentBuild})` : ''}
+              </span>
+            </div>
+
+            <label className="flex cursor-pointer items-start justify-between gap-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5">
+              <div>
+                <span className="block text-sm font-medium text-[var(--text-primary)]">
+                  Automatic updates
+                </span>
+                <span className="mt-0.5 block text-xs text-[var(--text-secondary)]">
+                  {isAndroidNative
+                    ? 'Automatically download verified APK updates on startup and prompt to install.'
+                    : 'Automatically check for new versions and refresh when an update is ready.'}
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={autoUpdateEnabled}
+                onChange={(e) => setAutoUpdateEnabled(e.target.checked)}
+                className="mt-1 h-4 w-4 shrink-0"
+              />
+            </label>
+
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {updateStatus === 'ready' && availableUpdate ? (
+                <button
+                  type="button"
+                  onClick={() => void applyUpdate()}
+                  className="btn-primary inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3.5 py-2 text-xs font-medium hover:opacity-90 sm:min-h-9"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                  <span>
+                    {isAndroidNative
+                      ? `Install v${availableUpdate.version}`
+                      : `Reload to v${availableUpdate.version}`}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={
+                    updateStatus === 'checking' ||
+                    updateStatus === 'downloading' ||
+                    updateStatus === 'installing' ||
+                    updateStatus === 'reloading'
+                  }
+                  onClick={() => void checkForUpdates({ manual: true })}
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--border-strong)] disabled:opacity-60 sm:min-h-9"
+                >
+                  <RefreshCw
+                    className={`h-3.5 w-3.5 text-[var(--color-accent)] ${
+                      updateStatus === 'checking' || updateStatus === 'downloading'
+                        ? 'animate-spin'
+                        : ''
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <span>
+                    {updateStatus === 'checking'
+                      ? 'Checking…'
+                      : updateStatus === 'downloading'
+                        ? `Downloading${
+                            typeof downloadProgress === 'number' && downloadProgress >= 0
+                              ? ` (${downloadProgress}%)`
+                              : '…'
+                          }`
+                        : updateStatus === 'installing'
+                          ? 'Opening installer…'
+                          : 'Check for updates'}
+                  </span>
+                </button>
+              )}
+
+              {updateStatus === 'up-to-date' && (
+                <span role="status" className="text-xs font-medium text-[var(--color-sage)]">
+                  Up to date on v{currentVersion}.
+                </span>
+              )}
+            </div>
+
+            {updateErrorMessage ? (
+              <p role="alert" className="text-xs font-medium text-[var(--color-crimson)]">
+                {updateErrorMessage}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>

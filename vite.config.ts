@@ -1,9 +1,31 @@
-import { defineConfig } from 'vitest/config';
+import { readFileSync } from 'node:fs';
+import { defineConfig, type Plugin } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
+const packageJson = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf-8')
+) as { version?: string };
+const appVersion = packageJson.version ?? '1.2.0';
+
+function versionManifestPlugin(): Plugin {
+  return {
+    name: 'selah-version-manifest',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'version.json',
+        source: `${JSON.stringify({ version: appVersion }, null, 2)}\n`,
+      });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
+  plugins: [react(), tailwindcss(), versionManifestPlugin()],
   build: {
     rollupOptions: {
       output: {

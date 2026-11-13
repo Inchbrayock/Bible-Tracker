@@ -11,7 +11,9 @@ import { LibraryView } from './components/library/LibraryView';
 import { SettingsDialog } from './components/settings/SettingsDialog';
 import { AppHeader, type AppTab } from './components/ui/AppHeader';
 import { CelebrationToast } from './components/ui/CelebrationToast';
+import { UpdateBanner } from './components/ui/UpdateBanner';
 import { hideNativeSplashScreen, subscribeNativeBackButton } from './lib/nativeShell';
+import { AppUpdaterProvider } from './lib/useAppUpdater';
 import { BibleStoreProvider, useBibleStore } from './store/useBibleStore';
 import type { AchievementStatus } from './types/bible';
 
@@ -22,7 +24,7 @@ const TAB_TITLES: Record<AppTab, string> = {
   journal: 'Journal & Plans | Selah',
 };
 
-const SanctuaryShell: React.FC = () => {
+const SanctuaryAppContent: React.FC = () => {
   const {
     ready,
     user,
@@ -118,6 +120,7 @@ const SanctuaryShell: React.FC = () => {
         tabIndex={-1}
         className="mx-auto w-full max-w-6xl flex-1 px-3.5 py-5 sm:px-6 sm:py-9 lg:py-10"
       >
+        <UpdateBanner />
         <MergeBanner />
         {!ready ? (
           <div className="folio-sheet p-8 text-center text-sm text-[var(--text-secondary)]">
@@ -200,6 +203,15 @@ const SanctuaryShell: React.FC = () => {
         {announcement}
       </div>
     </div>
+  );
+};
+
+const SanctuaryShell: React.FC = () => {
+  const { ready } = useBibleStore();
+  return (
+    <AppUpdaterProvider ready={ready}>
+      <SanctuaryAppContent />
+    </AppUpdaterProvider>
   );
 };
 
