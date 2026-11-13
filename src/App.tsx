@@ -8,8 +8,8 @@ import { DashboardView } from './components/dashboard/DashboardView';
 import { JournalView } from './components/journal/JournalView';
 import { BookDetailDialog } from './components/library/BookDetailDialog';
 import { LibraryView } from './components/library/LibraryView';
-import { SettingsDialog } from './components/settings/SettingsDialog';
-import { AppHeader, type AppTab } from './components/ui/AppHeader';
+import { SettingsView } from './components/settings/SettingsView';
+import { AppHeader, type AppTab, type PrimaryTab } from './components/ui/AppHeader';
 import { CelebrationToast } from './components/ui/CelebrationToast';
 import { UpdateBanner } from './components/ui/UpdateBanner';
 import { FOLIO_EASE } from './lib/motion';
@@ -18,11 +18,19 @@ import { AppUpdaterProvider } from './lib/useAppUpdater';
 import { BibleStoreProvider, useBibleStore } from './store/useBibleStore';
 import type { AchievementStatus } from './types/bible';
 
+const PRIMARY_TAB_LABELS: Record<PrimaryTab, string> = {
+  dashboard: 'Sanctuary',
+  library: 'Books & Chapters',
+  achievements: 'Hall of Seals',
+  journal: 'Journal & Plans',
+};
+
 const TAB_TITLES: Record<AppTab, string> = {
   dashboard: 'Sanctuary | Selah',
   library: 'Books & Chapters | Selah',
   achievements: 'Hall of Seals | Selah',
   journal: 'Journal & Plans | Selah',
+  settings: 'Settings | Selah',
 };
 
 const SanctuaryAppContent: React.FC = () => {
@@ -35,6 +43,9 @@ const SanctuaryAppContent: React.FC = () => {
   } = useBibleStore();
 
   const [activeTab, setActiveTab] = useState<AppTab>('dashboard');
+  const [returnTab, setReturnTab] = useState<PrimaryTab>('dashboard');
+  const returnTabRef = useRef<PrimaryTab>('dashboard');
+  returnTabRef.current = returnTab;
 
   const [journalInitialTab, setJournalInitialTab] = useState<'journal' | 'plans'>('journal');
   const [openBookId, setOpenBookId] = useState<string | null>(null);
@@ -42,27 +53,33 @@ const SanctuaryAppContent: React.FC = () => {
     status: AchievementStatus;
     isNew: boolean;
   } | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const accountAnchorRef = useRef<HTMLButtonElement | null>(null);
 
   const navigateToTab = useCallback(
     (nextTab: AppTab, options?: { journalSubTab?: 'journal' | 'plans' }) => {
-      setJournalInitialTab(options?.journalSubTab ?? 'journal');
+      if (nextTab === 'settings') {
+        setOpenBookId(null);
+      } else {
+        setReturnTab(nextTab);
+        setJournalInitialTab(options?.journalSubTab ?? 'journal');
+      }
       setActiveTab(nextTab);
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }
     },
     []
   );
 
   const backStateRef = useRef({
     inspectedAchievement,
-    settingsOpen,
     accountOpen,
     openBookId,
     activeTab,
   });
   backStateRef.current = {
     inspectedAchievement,
-    settingsOpen,
     accountOpen,
     openBookId,
     activeTab,
@@ -81,16 +98,16 @@ const SanctuaryAppContent: React.FC = () => {
         setInspectedAchievement(null);
         return true;
       }
-      if (state.settingsOpen) {
-        setSettingsOpen(false);
-        return true;
-      }
       if (state.accountOpen) {
         setAccountOpen(false);
         return true;
       }
       if (state.openBookId !== null) {
         setOpenBookId(null);
+        return true;
+      }
+      if (state.activeTab === 'settings') {
+        navigateToTab(returnTabRef.current);
         return true;
       }
       if (state.activeTab !== 'dashboard') {
@@ -117,8 +134,9 @@ const SanctuaryAppContent: React.FC = () => {
       <AppHeader
         activeTab={activeTab}
         onSelectTab={(tab) => navigateToTab(tab)}
-        onOpenSettings={() => setSettingsOpen(true)}
-        onOpenAccount={() => setAccountOpen(true)}
+        onOpenAccount={() => setAccountOpen((prev) => !prev)}
+        accountOpen={accountOpen}
+        accountButtonRef={accountAnchorRef}
       />
 
       <main
@@ -161,6 +179,13 @@ const SanctuaryAppContent: React.FC = () => {
               {activeTab === 'journal' && (
                 <JournalView onOpenBook={setOpenBookId} initialSubTab={journalInitialTab} />
               )}
+              {activeTab === 'settings' && (
+                <SettingsView
+                  onBack={() => navigateToTab(returnTab)}
+                  backLabel={PRIMARY_TAB_LABELS[returnTab]}
+                  onOpenAccount={() => setAccountOpen(true)}
+                />
+              )}
             </motion.div>
           </AnimatePresence>
         )}
@@ -187,13 +212,12 @@ const SanctuaryAppContent: React.FC = () => {
         onClose={() => setInspectedAchievement(null)}
       />
 
-      <SettingsDialog
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        onOpenAccount={() => setAccountOpen(true)}
+      <AccountDialog
+        open={accountOpen}
+        onClose={() => setAccountOpen(false)}
+        onOpenSettings={() => navigateToTab('settings')}
+        anchorRef={accountAnchorRef}
       />
-
-      <AccountDialog open={accountOpen} onClose={() => setAccountOpen(false)} />
 
       <CelebrationToast
         queue={unlockedQueue}

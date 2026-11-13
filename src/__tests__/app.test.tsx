@@ -5,6 +5,12 @@ import { formatShortDate, todayPlainDate } from '../lib/dates';
 
 vi.setConfig({ testTimeout: 15000 });
 
+function getWholeBibleChapterReadout(chaptersRead: number) {
+  return screen.getByText(
+    (_, el) => el?.tagName === 'SPAN' && el.textContent?.trim() === `${chaptersRead} / 1,189 ch`
+  );
+}
+
 describe('Selah Bible Sanctuary App UI', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -19,8 +25,12 @@ describe('Selah Bible Sanctuary App UI', () => {
     fireEvent.click(previewBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/12d streak|days streak/i)).toBeInTheDocument();
+      expect(screen.getByText(/days streak/i)).toBeInTheDocument();
     });
+
+    const header = document.querySelector('header');
+    expect(header).not.toBeNull();
+    expect(header?.textContent).not.toMatch(/1,189|134|12d|streak/i);
 
     fireEvent.click(screen.getByRole('button', { name: /Books & Chapters/i }));
     expect(await screen.findByText(/Scripture Library/i)).toBeInTheDocument();
@@ -44,8 +54,12 @@ describe('Selah Bible Sanctuary App UI', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Preview Sample Journey/i }));
     await waitFor(() => {
-      expect(screen.getByText(/12d streak|days streak/i)).toBeInTheDocument();
+      expect(screen.getByText(/days streak/i)).toBeInTheDocument();
     });
+
+    const header = document.querySelector('header');
+    expect(header).not.toBeNull();
+    expect(header?.textContent).not.toMatch(/1,189|134|12d|streak/i);
 
     fireEvent.click(screen.getByRole('button', { name: /Journal & Plans/i }));
     expect(await screen.findByText(/Reading Journal/i)).toBeInTheDocument();
@@ -78,7 +92,7 @@ describe('Selah Bible Sanctuary App UI', () => {
     fireEvent.click(quickLogBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/1 \/ 1,189 chapters/i)).toBeInTheDocument();
+      expect(getWholeBibleChapterReadout(1)).toBeInTheDocument();
     });
 
     expect(await screen.findByText(/^Open the Scroll$/i)).toBeInTheDocument();
@@ -94,18 +108,31 @@ describe('Selah Bible Sanctuary App UI', () => {
     });
   });
 
-  it('switches color scheme inside Settings modal', async () => {
+  it('opens dedicated Settings page from profile popover, switches color scheme, and navigates back', async () => {
     render(<App />);
     expect(await screen.findByText(/Canonical Journey/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /Open settings/i }));
-    expect(await screen.findByText(/Sanctuary Settings/i)).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: /Sign in to sync your Sanctuary account/i })
+    );
+    const popover = await screen.findByTestId('account-popover');
+    fireEvent.click(await screen.findByRole('button', { name: /Settings/i }));
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /Sanctuary Settings/i })
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(popover).not.toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByRole('button', { name: /Vesper Candlelight/i }));
     expect(
       document.querySelector('meta[name="color-scheme"]')?.getAttribute('content')
     ).toBe('dark');
     expect(localStorage.getItem('selah-color-scheme')).toBe('dark');
+
+    fireEvent.click(screen.getByRole('button', { name: /Back to Sanctuary/i }));
+    expect(await screen.findByText(/Canonical Journey/i)).toBeInTheDocument();
   });
 
   it('renders 66 proportional canonical book spines and opens book sheets from the bar', async () => {

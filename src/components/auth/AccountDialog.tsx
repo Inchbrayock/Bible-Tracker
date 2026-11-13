@@ -1,24 +1,68 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'motion/react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   AlertCircle,
   Check,
+  ChevronRight,
   Cloud,
   CloudOff,
   Edit3,
   LogOut,
   Mail,
   RefreshCw,
+  Settings,
   UserCheck,
   X,
 } from 'lucide-react';
 import { SPRING_TACTILE, TACTILE_PILL_TAP, TACTILE_TAP } from '../../lib/motion';
 import { useBibleStore } from '../../store/useBibleStore';
-import { ModalDialog } from '../ui/ModalDialog';
+import { ProfileAvatar } from '../ui/ProfileAvatar';
 
 interface AccountDialogProps {
   open: boolean;
   onClose: () => void;
+  onOpenSettings?: () => void;
+  anchorRef?: React.RefObject<HTMLElement | null>;
+}
+
+interface PopoverPlacement {
+  top: number;
+  right: number;
+  maxWidth: number;
+  maxHeight: number;
+}
+
+const POPOVER_MAX_WIDTH = 368;
+const VIEWPORT_MARGIN = 12;
+
+function computePopoverPlacement(anchor: HTMLElement | null | undefined): PopoverPlacement {
+  if (typeof window === 'undefined') {
+    return { top: 64, right: 16, maxWidth: POPOVER_MAX_WIDTH, maxHeight: 640 };
+  }
+
+  const vw = document.documentElement?.clientWidth || window.innerWidth;
+  const vh = document.documentElement?.clientHeight || window.innerHeight;
+  const clampedMaxWidth = Math.min(POPOVER_MAX_WIDTH, Math.max(240, vw - VIEWPORT_MARGIN * 2));
+  const rect = anchor?.getBoundingClientRect();
+
+  if (!rect || (rect.width === 0 && rect.height === 0)) {
+    return {
+      top: 64,
+      right: 16,
+      maxWidth: clampedMaxWidth,
+      maxHeight: Math.max(260, vh - 80),
+    };
+  }
+
+  const top = Math.max(VIEWPORT_MARGIN, Math.round(rect.bottom + 8));
+  const desiredRight = Math.max(VIEWPORT_MARGIN, Math.round(vw - rect.right));
+  const maxPossibleRight = Math.max(VIEWPORT_MARGIN, vw - VIEWPORT_MARGIN - clampedMaxWidth);
+  const right = Math.min(desiredRight, maxPossibleRight);
+  const maxWidth = Math.min(POPOVER_MAX_WIDTH, Math.max(240, vw - right - VIEWPORT_MARGIN));
+  const maxHeight = Math.max(260, vh - top - VIEWPORT_MARGIN);
+
+  return { top, right, maxWidth, maxHeight };
 }
 
 type AuthMode = 'signin' | 'signup' | 'reset';
@@ -44,16 +88,12 @@ const GoogleMark: React.FC = () => (
   </svg>
 );
 
-function getInitials(displayName: string | null, email: string | null): string {
-  const source = (displayName || email || 'S').trim();
-  const parts = source.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  }
-  return source.slice(0, 2).toUpperCase();
-}
-
-export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) => {
+export const AccountDialog: React.FC<AccountDialogProps> = ({
+  open,
+  onClose,
+  onOpenSettings,
+  anchorRef,
+}) => {
   const {
     firebaseAvailable,
     user,
@@ -84,6 +124,64 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
 
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
+  const [placement, setPlacement] = useState<PopoverPlacement>(() =>
+    computePopoverPlacement(anchorRef?.current)
+  );
+
+  const panelRef = useRef<HTMLDivElement>(null);
+  const wasOpenRef = useRef(false);
+
+  const updatePlacement = useCallback(() => {
+    setPlacement(computePopoverPlacement(anchorRef?.current));
+  }, [anchorRef]);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    updatePlacement();
+    window.addEventListener('resize', updatePlacement);
+    window.addEventListener('scroll', updatePlacement, { passive: true });
+    return () => {
+      window.removeEventListener('resize', updatePlacement);
+      window.removeEventListener('scroll', updatePlacement);
+    };
+  }, [open, updatePlacement]);
+
+  useEffect(() => {
+    if (open && !wasOpenRef.current) {
+      panelRef.current?.focus({ preventScroll: true });
+    }
+    wasOpenRef.current = open;
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleOutsidePress = (e: Event) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      if (panelRef.current?.contains(target) || anchorRef?.current?.contains(target)) {
+        return;
+      }
+      onClose();
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        requestAnimationFrame(() => anchorRef?.current?.focus());
+      }
+    };
+
+    document.addEventListener('pointerdown', handleOutsidePress);
+    document.addEventListener('mousedown', handleOutsidePress);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsidePress);
+      document.removeEventListener('mousedown', handleOutsidePress);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onClose, anchorRef]);
 
   useEffect(() => {
     if (open) {
@@ -213,40 +311,53 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
 
   const SyncIcon = syncBadge.icon;
 
-  return (
-    <ModalDialog
-      open={open}
-      onClose={onClose}
-      labelledBy="account-dialog-title"
-      className="max-w-md"
-    >
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 pt-6 pb-3.5 sm:px-6 sm:py-4">
-          <div className="min-w-0">
-            <h2
-              id="account-dialog-title"
-              className="font-display text-2xl font-medium text-[var(--text-primary)]"
+  const popoverContent = (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          ref={panelRef}
+          role="dialog"
+          aria-labelledby="account-dialog-title"
+          tabIndex={-1}
+          data-testid="account-popover"
+          initial={{ opacity: 0, y: -6, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -4, scale: 0.98 }}
+          transition={SPRING_TACTILE}
+          style={{
+            top: `${placement.top}px`,
+            right: `${placement.right}px`,
+            width: `${placement.maxWidth}px`,
+            maxHeight: `${placement.maxHeight}px`,
+          }}
+          className="fixed z-50 flex origin-top-right flex-col overflow-hidden rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-[0_20px_48px_-12px_rgba(12,16,24,0.28),0_4px_14px_-4px_rgba(12,16,24,0.12)] outline-none"
+        >
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3.5 sm:px-5">
+            <div className="min-w-0">
+              <h2
+                id="account-dialog-title"
+                className="font-display text-xl font-medium text-[var(--text-primary)]"
+              >
+                {user ? 'Your Sanctuary Account' : 'Save Your Reading Ledger'}
+              </h2>
+              <p className="text-xs text-[var(--text-secondary)]">
+                {user
+                  ? 'Readings, study notes, plans, and seals stay synced to your account.'
+                  : 'Sign in or create an account to back up and sync across devices.'}
+              </p>
+            </div>
+            <motion.button
+              type="button"
+              whileTap={TACTILE_PILL_TAP}
+              onClick={onClose}
+              aria-label="Close account dialog"
+              className="inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             >
-              {user ? 'Your Sanctuary Account' : 'Save Your Reading Ledger'}
-            </h2>
-            <p className="text-xs text-[var(--text-secondary)]">
-              {user
-                ? 'Readings, study notes, plans, and seals stay synced to your account.'
-                : 'Sign in or create an account to back up and sync across devices.'}
-            </p>
+              <X className="h-4 w-4" aria-hidden="true" />
+            </motion.button>
           </div>
-          <motion.button
-            type="button"
-            whileTap={TACTILE_PILL_TAP}
-            onClick={onClose}
-            aria-label="Close account dialog"
-            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] sm:min-h-9 sm:min-w-9"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </motion.button>
-        </div>
 
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:space-y-5 sm:p-6">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
           {!firebaseAvailable ? (
             <div className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 text-sm text-[var(--text-secondary)]">
               <p className="font-medium text-[var(--text-primary)]">
@@ -261,21 +372,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
             <>
               {/* Profile Card */}
               <div className="flex items-start gap-3.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-4">
-                {user.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt=""
-                    referrerPolicy="no-referrer"
-                    className="h-11 w-11 shrink-0 rounded-full border border-[var(--border-subtle)] object-cover"
-                  />
-                ) : (
-                  <div
-                    aria-hidden="true"
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--color-accent)] bg-[var(--color-accent-soft)] font-display text-base font-medium text-[var(--color-accent)]"
-                  >
-                    {getInitials(user.displayName, user.email)}
-                  </div>
-                )}
+                <ProfileAvatar user={user} sizeClassName="h-11 w-11" textClassName="text-base" />
 
                 <div className="min-w-0 flex-1">
                   {editingName ? (
@@ -445,20 +542,6 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                 </p>
               )}
 
-              <div className="flex flex-col items-stretch justify-between gap-3 border-t border-[var(--border-subtle)] pt-4 sm:flex-row sm:items-center">
-                <p className="text-xs text-[var(--text-secondary)]">
-                  Signing out clears this browser’s local copy while keeping your cloud data safe.
-                </p>
-                <button
-                  type="button"
-                  disabled={submitting}
-                  onClick={() => void handleSignOut()}
-                  className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--color-crimson)] hover:text-[var(--color-crimson)] disabled:opacity-60 sm:min-h-9"
-                >
-                  <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>Sign out</span>
-                </button>
-              </div>
             </>
           ) : (
             <>
@@ -664,8 +747,62 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
               </form>
             </>
           )}
-        </div>
-      </div>
-    </ModalDialog>
+
+          {onOpenSettings && (
+            <div className="border-t border-[var(--border-subtle)] pt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenSettings();
+                }}
+                className="group flex min-h-11 w-full items-center justify-between gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2.5 text-left transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--bg-surface)]"
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[var(--bg-surface)] text-[var(--text-secondary)] transition-colors group-hover:text-[var(--color-accent)]">
+                    <Settings className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-[var(--text-primary)]">
+                      Settings
+                    </span>
+                    <span className="block truncate text-xs text-[var(--text-secondary)]">
+                      Theme, reading cadence, data &amp; updates
+                    </span>
+                  </span>
+                </span>
+                <ChevronRight
+                  className="h-4 w-4 shrink-0 text-[var(--text-tertiary)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--text-primary)]"
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
+          )}
+
+          {firebaseAvailable && user && (
+            <div className="flex flex-col items-stretch justify-between gap-3 border-t border-[var(--border-subtle)] pt-3.5 sm:flex-row sm:items-center">
+              <p className="text-xs text-[var(--text-secondary)]">
+                Signing out clears this browser’s local copy while keeping your cloud data safe.
+              </p>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => void handleSignOut()}
+                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:border-[var(--color-crimson)] hover:text-[var(--color-crimson)] disabled:opacity-60 sm:min-h-9"
+              >
+                <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Sign out</span>
+              </button>
+            </div>
+          )}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(popoverContent, document.body);
+  }
+  return popoverContent;
 };

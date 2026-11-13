@@ -230,6 +230,12 @@ vi.mock('../db/cloudSync', () => ({
 import { App } from '../App';
 import { signInWithGoogleAccount } from '../lib/auth';
 
+function getWholeBibleChapterReadout(chaptersRead: number) {
+  return screen.getByText(
+    (_, el) => el?.tagName === 'SPAN' && el.textContent?.trim() === `${chaptersRead} / 1,189 ch`
+  );
+}
+
 describe('Firebase Account & Cloud Sync', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -289,7 +295,7 @@ describe('Firebase Account & Cloud Sync', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Quick Log: John 1/i }));
     await waitFor(() => {
-      expect(screen.getByText(/1 \/ 1,189 chapters/i)).toBeInTheDocument();
+      expect(getWholeBibleChapterReadout(1)).toBeInTheDocument();
     });
 
     // Sign in with Google
@@ -314,7 +320,7 @@ describe('Firebase Account & Cloud Sync', () => {
 
     await waitFor(() => {
       expect(cloudSpies.upsertCloudReadingLog).toHaveBeenCalled();
-      expect(screen.getByText(/2 \/ 1,189 chapters/i)).toBeInTheDocument();
+      expect(getWholeBibleChapterReadout(2)).toBeInTheDocument();
     });
 
     // Signing out resets local ledger so cached data isn't left behind
@@ -322,7 +328,7 @@ describe('Firebase Account & Cloud Sync', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Sign out/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/0 \/ 1,189 chapters/i)).toBeInTheDocument();
+      expect(getWholeBibleChapterReadout(0)).toBeInTheDocument();
     });
   }, 15000);
 
@@ -349,7 +355,7 @@ describe('Firebase Account & Cloud Sync', () => {
     // Log a local guest chapter
     fireEvent.click(screen.getByRole('button', { name: /Quick Log: John 1/i }));
     await waitFor(() => {
-      expect(screen.getByText(/1 \/ 1,189 chapters/i)).toBeInTheDocument();
+      expect(getWholeBibleChapterReadout(1)).toBeInTheDocument();
     });
 
     // Sign into email-uid-1
@@ -371,7 +377,7 @@ describe('Firebase Account & Cloud Sync', () => {
     fireEvent.click(screen.getByRole('button', { name: /Merge into my account/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/2 \/ 1,189 chapters/i)).toBeInTheDocument();
+      expect(getWholeBibleChapterReadout(2)).toBeInTheDocument();
       expect(
         screen.queryByText(/Unmerged local readings found on this device/i)
       ).not.toBeInTheDocument();
@@ -400,7 +406,7 @@ describe('Firebase Account & Cloud Sync', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Quick Log: John 1/i }));
     await waitFor(() => {
-      expect(screen.getByText(/1 \/ 1,189 chapters/i)).toBeInTheDocument();
+      expect(getWholeBibleChapterReadout(1)).toBeInTheDocument();
     });
 
     await act(async () => {
@@ -424,13 +430,16 @@ describe('Firebase Account & Cloud Sync', () => {
       expect(
         screen.queryByText(/Unmerged local readings found on this device/i)
       ).not.toBeInTheDocument();
-      expect(screen.getByText(/1 \/ 1,189 chapters/i)).toBeInTheDocument();
+      expect(getWholeBibleChapterReadout(1)).toBeInTheDocument();
     });
     expect(mockState.cloudLogsByUid.get('email-uid-1')?.size).toBe(1);
 
-    // Open Settings and toggle color scheme + preference -> syncs to cloud
-    fireEvent.click(screen.getByRole('button', { name: /Open settings/i }));
-    expect(await screen.findByText(/Sanctuary Settings/i)).toBeInTheDocument();
+    // Open profile popover -> Settings page and toggle color scheme + preference -> syncs to cloud
+    fireEvent.click(screen.getByRole('button', { name: /Open account and cloud sync/i }));
+    fireEvent.click(await screen.findByRole('button', { name: /Settings/i }));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /Sanctuary Settings/i })
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Vesper Candlelight/i }));
     fireEvent.click(screen.getByLabelText(/Sabbath grace day/i));
 
@@ -469,5 +478,128 @@ describe('Firebase Account & Cloud Sync', () => {
     expect(
       await screen.findByText(/Password reset link sent\. Check your inbox\./i)
     ).toBeInTheDocument();
+  }, 15000);
+
+  it('displays profile picture on the far right without a top-bar settings button and opens dedicated Settings from the popover', async () => {
+    render(<App />);
+    expect(await screen.findByText(/Canonical Journey/i)).toBeInTheDocument();
+
+    // No standalone Settings button exists in the header before clicking the profile button
+    expect(screen.queryByRole('button', { name: /Open settings|Settings/i })).not.toBeInTheDocument();
+    const signInBtn = screen.getByRole('button', {
+      name: /Sign in to sync your Sanctuary account/i,
+    });
+    expect(signInBtn).toBeInTheDocument();
+
+    // Sign in with a Google profile picture
+    await act(async () => {
+      mockState.setCurrentUser({
+        uid: 'photo-uid-1',
+        email: 'grace@selah.app',
+        displayName: 'Grace Reader',
+        photoURL: 'https://example.com/grace.jpg',
+        emailVerified: true,
+        providerIds: ['google.com'],
+      });
+    });
+
+    const accountBtn = await screen.findByRole('button', {
+      name: /Open account and cloud sync/i,
+    });
+    expect(screen.queryByRole('button', { name: /Open settings|Settings/i })).not.toBeInTheDocument();
+
+    // Displays profile picture rather than user name in the header
+    const header = document.querySelector('header');
+    expect(header).not.toBeNull();
+    expect(header?.textContent).not.toContain('Grace');
+    const avatarImg = accountBtn.querySelector('img');
+    expect(avatarImg).not.toBeNull();
+    expect(avatarImg?.getAttribute('src')).toBe('https://example.com/grace.jpg');
+
+    // Falls back to monogram initials (not name text) if profile photo fails to load
+    if (avatarImg) {
+      fireEvent.error(avatarImg);
+    }
+    expect(accountBtn.querySelector('img')).toBeNull();
+    expect(accountBtn.textContent).toBe('GR');
+    expect(header?.textContent).not.toContain('Grace');
+
+    // Navigate from another tab so Back button returns to that previous tab
+    fireEvent.click(screen.getByRole('button', { name: /Books & Chapters/i }));
+    fireEvent.click(accountBtn);
+    expect(await screen.findByTestId('account-popover')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Settings/i }));
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /Sanctuary Settings/i })
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId('mobile-nav-pill')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByTestId('account-popover')).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Back to Books & Chapters/i }));
+    expect(await screen.findByRole('heading', { level: 1, name: /Scripture Library/i })).toBeInTheDocument();
+  }, 15000);
+
+  it('opens the account screen anchored beneath the profile button and dismisses cleanly', async () => {
+    render(<App />);
+    expect(await screen.findByText(/Canonical Journey/i)).toBeInTheDocument();
+
+    await act(async () => {
+      mockState.setCurrentUser({
+        uid: 'popover-uid-1',
+        email: 'grace@selah.app',
+        displayName: 'Grace Reader',
+        photoURL: 'https://example.com/grace.jpg',
+        emailVerified: true,
+        providerIds: ['google.com'],
+      });
+    });
+
+    const profileBtn = await screen.findByRole('button', {
+      name: /Open account and cloud sync/i,
+    });
+    vi.spyOn(profileBtn, 'getBoundingClientRect').mockReturnValue({
+      top: 12,
+      bottom: 48,
+      left: 900,
+      right: 936,
+      width: 36,
+      height: 36,
+      x: 900,
+      y: 12,
+      toJSON: () => ({}),
+    });
+
+    fireEvent.click(profileBtn);
+    const popover = await screen.findByTestId('account-popover');
+    expect(popover).toHaveStyle({
+      top: '56px',
+      right: `${window.innerWidth - 936}px`,
+    });
+    expect(profileBtn).toHaveAttribute('aria-expanded', 'true');
+
+    // Clicking outside dismisses the anchored popover
+    fireEvent.mouseDown(document.body);
+    await waitFor(() => {
+      expect(screen.queryByTestId('account-popover')).not.toBeInTheDocument();
+    });
+
+    // Reopen and toggle closed by clicking the profile button again
+    fireEvent.click(profileBtn);
+    expect(await screen.findByTestId('account-popover')).toBeInTheDocument();
+    fireEvent.click(profileBtn);
+    await waitFor(() => {
+      expect(screen.queryByTestId('account-popover')).not.toBeInTheDocument();
+    });
+
+    // Reopen and dismiss with Escape
+    fireEvent.click(profileBtn);
+    expect(await screen.findByTestId('account-popover')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => {
+      expect(screen.queryByTestId('account-popover')).not.toBeInTheDocument();
+    });
   }, 15000);
 });

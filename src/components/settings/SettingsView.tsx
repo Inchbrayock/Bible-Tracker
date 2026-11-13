@@ -1,34 +1,49 @@
 import React, { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
+  ArrowLeft,
   BookOpen,
   Cloud,
+  Database,
   Download,
   Monitor,
   Moon,
+  Palette,
   RefreshCw,
+  SlidersHorizontal,
   Sun,
   Trash2,
   Upload,
-  X,
 } from 'lucide-react';
 import { exportSanctuaryBackupFile } from '../../lib/backupFile';
-import { SPRING_TACTILE, TACTILE_PILL_TAP, TACTILE_TAP } from '../../lib/motion';
+import { SPRING_TACTILE, TACTILE_TAP } from '../../lib/motion';
 import { getSystemPrefersDark } from '../../lib/theme';
 import { useAppUpdater } from '../../lib/useAppUpdater';
 import { useBibleStore } from '../../store/useBibleStore';
 import type { ColorSchemePreference } from '../../types/bible';
-import { ModalDialog } from '../ui/ModalDialog';
+import { ProfileAvatar } from '../ui/ProfileAvatar';
 
-interface SettingsDialogProps {
-  open: boolean;
-  onClose: () => void;
-  onOpenAccount?: () => void;
+interface SettingsViewProps {
+  onBack: () => void;
+  backLabel: string;
+  onOpenAccount: () => void;
 }
 
-export const SettingsDialog: React.FC<SettingsDialogProps> = ({
-  open,
-  onClose,
+const SECTION_LINKS: {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
+  { id: 'settings-account', label: 'Cloud account', icon: Cloud },
+  { id: 'settings-appearance', label: 'Appearance', icon: Palette },
+  { id: 'settings-cadence', label: 'Reading cadence', icon: SlidersHorizontal },
+  { id: 'settings-data', label: 'Data & portability', icon: Database },
+  { id: 'settings-updates', label: 'App updates', icon: RefreshCw },
+];
+
+export const SettingsView: React.FC<SettingsViewProps> = ({
+  onBack,
+  backLabel,
   onOpenAccount,
 }) => {
   const {
@@ -95,6 +110,11 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
     }
   };
 
+  const scrollToSection = (sectionId: string) => {
+    const el = document.getElementById(sectionId);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const themeOptions: {
     id: ColorSchemePreference;
     label: string;
@@ -134,111 +154,173 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   ];
 
   return (
-    <ModalDialog open={open} onClose={onClose} labelledBy="settings-title" className="max-w-xl">
-      <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 pt-6 pb-3.5 sm:px-6 sm:py-4">
-          <div className="min-w-0">
-            <h2
-              id="settings-title"
-              className="font-display text-2xl font-medium text-[var(--text-primary)]"
-            >
+    <div className="space-y-6 sm:space-y-8">
+      {/* Page Header */}
+      <section className="border-b border-[var(--border-subtle)] pb-5 sm:pb-6">
+        <button
+          type="button"
+          onClick={onBack}
+          className="tactile-press mb-3 inline-flex min-h-9 items-center gap-1.5 text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          <span>Back to {backLabel}</span>
+        </button>
+        <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+          <div>
+            <h1 className="font-display text-2xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[2.15rem]">
               Sanctuary Settings
-            </h2>
-            <p className="text-xs text-[var(--text-secondary)]">
-              Appearance, cloud account sync, streak cadence, and JSON backup.
+            </h1>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              Appearance, cloud account sync, reading cadence, data backup, and updates.
             </p>
           </div>
-          <motion.button
-            type="button"
-            whileTap={TACTILE_PILL_TAP}
-            onClick={onClose}
-            aria-label="Close settings"
-            className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] sm:min-h-9 sm:min-w-9"
-          >
-            <X className="h-4 w-4" aria-hidden="true" />
-          </motion.button>
+          <span className="font-mono text-xs text-[var(--text-secondary)]">
+            v{currentVersion}
+            {currentBuild !== null ? ` (build ${currentBuild})` : ''}
+          </span>
         </div>
+      </section>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:space-y-6 sm:p-6">
-          {/* Cloud Account */}
-          {onOpenAccount && (
-            <div className="flex flex-col justify-between gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 sm:flex-row sm:flex-wrap sm:items-center">
-              <div className="flex items-start gap-2.5">
-                <Cloud
-                  className={`mt-0.5 h-4 w-4 shrink-0 ${
-                    user ? 'text-[var(--color-sage)]' : 'text-[var(--color-accent)]'
-                  }`}
-                  aria-hidden="true"
-                />
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-[var(--text-primary)]">
-                    {user ? user.displayName || user.email || 'Signed in' : 'Cloud account sync'}
-                  </p>
-                  <p className="text-xs text-[var(--text-secondary)]">
-                    {user
-                      ? `Backing up to ${user.email ?? 'your account'} (${syncStatus}).`
-                      : 'Sign in to save your readings and notes across devices.'}
-                  </p>
+      <div className="grid gap-6 lg:grid-cols-12 lg:items-start lg:gap-8">
+        {/* Left Navigation & Account Rail */}
+        <aside className="space-y-5 lg:sticky lg:top-20 lg:col-span-4">
+          <nav
+            aria-label="Settings sections"
+            className="hidden divide-y divide-[var(--border-subtle)] overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] lg:block"
+          >
+            {SECTION_LINKS.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => scrollToSection(item.id)}
+                  className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]"
+                >
+                  <Icon className="h-4 w-4 shrink-0 text-[var(--color-accent)]" aria-hidden="true" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Cloud Account Summary */}
+          <section
+            id="settings-account"
+            className="folio-sheet scroll-mt-20 p-4 sm:p-5"
+            aria-labelledby="settings-account-heading"
+          >
+            <div className="flex items-start gap-3">
+              {user ? (
+                <ProfileAvatar user={user} sizeClassName="h-10 w-10" textClassName="text-sm" />
+              ) : (
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+                  <Cloud className="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
                 </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <h2
+                  id="settings-account-heading"
+                  className="font-display text-lg font-medium text-[var(--text-primary)]"
+                >
+                  {user ? user.displayName || user.email || 'Signed in' : 'Cloud account sync'}
+                </h2>
+                <p className="mt-0.5 text-xs leading-relaxed text-[var(--text-secondary)]">
+                  {user
+                    ? `Backing up to ${user.email ?? 'your account'} (${syncStatus}).`
+                    : 'Sign in to save your readings, plans, and study notes across devices.'}
+                </p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onOpenAccount();
-                }}
-                className="inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-surface)] sm:min-h-9 sm:w-auto"
-              >
-                {user ? 'Manage account' : 'Sign in'}
-              </button>
             </div>
-          )}
+            <button
+              type="button"
+              onClick={onOpenAccount}
+              className="mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--border-strong)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] sm:min-h-9"
+            >
+              {user ? 'Manage account' : 'Sign in'}
+            </button>
+          </section>
+        </aside>
 
+        {/* Main Settings Sections */}
+        <div className="space-y-6 lg:col-span-8">
           {/* Theme Swatches */}
-          <fieldset>
-            <legend className="text-xs font-medium text-[var(--text-secondary)]">
-              Color scheme
-            </legend>
-            <div className="mt-2.5 grid gap-2 sm:grid-cols-3 sm:gap-2.5">
-              {themeOptions.map((opt) => {
-                const Icon = opt.icon;
-                const active = colorScheme === opt.id;
-                return (
-                  <motion.button
-                    key={opt.id}
-                    type="button"
-                    whileTap={TACTILE_TAP}
-                    transition={SPRING_TACTILE}
-                    onClick={() => setColorScheme(opt.id)}
-                    aria-pressed={active}
-                    className={`relative flex min-h-12 flex-row items-center justify-between gap-3 rounded-md border p-3 text-left transition-colors sm:min-h-0 sm:flex-col sm:items-start sm:justify-start sm:gap-0 ${
-                      active
-                        ? 'border-[var(--color-accent)]'
-                        : 'border-[var(--border-subtle)] bg-[var(--bg-canvas)] hover:border-[var(--border-strong)]'
-                    }`}
-                  >
-                    {active && (
-                      <motion.span
-                        layoutId="theme-swatch-pill"
-                        transition={SPRING_TACTILE}
-                        aria-hidden="true"
-                        className="absolute inset-0 rounded-[5px] bg-[var(--color-accent-soft)]"
-                      />
-                    )}
-                    <div className="relative z-10 flex items-center gap-3 sm:w-full sm:justify-between">
-                      <Icon
-                        className={`h-4 w-4 shrink-0 ${active ? 'text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}
-                        aria-hidden="true"
-                      />
-                      <div className="sm:hidden">
-                        <span className="block text-sm font-medium text-[var(--text-primary)]">
-                          {opt.label}
+          <section
+            id="settings-appearance"
+            className="folio-sheet scroll-mt-20 p-5 sm:p-6"
+            aria-labelledby="settings-appearance-heading"
+          >
+            <h2
+              id="settings-appearance-heading"
+              className="font-display text-xl font-medium text-[var(--text-primary)]"
+            >
+              Appearance
+            </h2>
+            <p className="mt-1 text-xs text-[var(--text-secondary)]">
+              Choose the paper and ink palette for reading and logging.
+            </p>
+
+            <fieldset className="mt-4">
+              <legend className="text-xs font-medium text-[var(--text-secondary)]">
+                Color scheme
+              </legend>
+              <div className="mt-2.5 grid gap-2 sm:grid-cols-3 sm:gap-2.5">
+                {themeOptions.map((opt) => {
+                  const Icon = opt.icon;
+                  const active = colorScheme === opt.id;
+                  return (
+                    <motion.button
+                      key={opt.id}
+                      type="button"
+                      whileTap={TACTILE_TAP}
+                      transition={SPRING_TACTILE}
+                      onClick={() => setColorScheme(opt.id)}
+                      aria-pressed={active}
+                      className={`relative flex min-h-12 flex-row items-center justify-between gap-3 rounded-md border p-3 text-left transition-colors sm:min-h-0 sm:flex-col sm:items-start sm:justify-start sm:gap-0 ${
+                        active
+                          ? 'border-[var(--color-accent)]'
+                          : 'border-[var(--border-subtle)] bg-[var(--bg-canvas)] hover:border-[var(--border-strong)]'
+                      }`}
+                    >
+                      {active && (
+                        <motion.span
+                          layoutId="theme-swatch-pill"
+                          transition={SPRING_TACTILE}
+                          aria-hidden="true"
+                          className="absolute inset-0 rounded-[5px] bg-[var(--color-accent-soft)]"
+                        />
+                      )}
+                      <div className="relative z-10 flex items-center gap-3 sm:w-full sm:justify-between">
+                        <Icon
+                          className={`h-4 w-4 shrink-0 ${active ? 'text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}
+                          aria-hidden="true"
+                        />
+                        <div className="sm:hidden">
+                          <span className="block text-sm font-medium text-[var(--text-primary)]">
+                            {opt.label}
+                          </span>
+                          <span className="block text-xs text-[var(--text-secondary)]">
+                            {opt.detail}
+                          </span>
+                        </div>
+                        <span
+                          aria-hidden="true"
+                          className="hidden h-4 w-7 items-center justify-around rounded-xs border border-black/15 px-0.5 sm:flex"
+                          style={{ backgroundColor: opt.swatchBg }}
+                        >
+                          <span
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: opt.swatchInk }}
+                          />
+                          <span
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: opt.swatchAccent }}
+                          />
                         </span>
-                        <span className="block text-xs text-[var(--text-secondary)]">{opt.detail}</span>
                       </div>
                       <span
                         aria-hidden="true"
-                        className="hidden h-4 w-7 items-center justify-around rounded-xs border border-black/15 px-0.5 sm:flex"
+                        className="relative z-10 flex h-4 w-7 shrink-0 items-center justify-around rounded-xs border border-black/15 px-0.5 sm:hidden"
                         style={{ backgroundColor: opt.swatchBg }}
                       >
                         <span
@@ -250,38 +332,36 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                           style={{ backgroundColor: opt.swatchAccent }}
                         />
                       </span>
-                    </div>
-                    <span
-                      aria-hidden="true"
-                      className="relative z-10 flex h-4 w-7 shrink-0 items-center justify-around rounded-xs border border-black/15 px-0.5 sm:hidden"
-                      style={{ backgroundColor: opt.swatchBg }}
-                    >
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: opt.swatchInk }}
-                      />
-                      <span
-                        className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: opt.swatchAccent }}
-                      />
-                    </span>
-                    <span className="relative z-10 mt-2.5 hidden text-sm font-medium text-[var(--text-primary)] sm:block">
-                      {opt.label}
-                    </span>
-                    <span className="relative z-10 hidden text-xs text-[var(--text-secondary)] sm:block">
-                      {opt.detail}
-                    </span>
-                  </motion.button>
-                );
-              })}
-            </div>
-          </fieldset>
+                      <span className="relative z-10 mt-2.5 hidden text-sm font-medium text-[var(--text-primary)] sm:block">
+                        {opt.label}
+                      </span>
+                      <span className="relative z-10 hidden text-xs text-[var(--text-secondary)] sm:block">
+                        {opt.detail}
+                      </span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </fieldset>
+          </section>
 
           {/* Preferences */}
-          <div className="space-y-3 border-t border-[var(--border-subtle)] pt-5">
-            <h3 className="font-display text-base font-medium text-[var(--text-primary)]">
-              Reading cadence & feedback
-            </h3>
+          <section
+            id="settings-cadence"
+            className="folio-sheet scroll-mt-20 space-y-3.5 p-5 sm:p-6"
+            aria-labelledby="settings-cadence-heading"
+          >
+            <div>
+              <h2
+                id="settings-cadence-heading"
+                className="font-display text-xl font-medium text-[var(--text-primary)]"
+              >
+                Reading cadence & feedback
+              </h2>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                Control streak grace rules and milestone animations.
+              </p>
+            </div>
 
             <label className="flex cursor-pointer items-start justify-between gap-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5">
               <div>
@@ -320,13 +400,25 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 className="mt-1 h-4 w-4 shrink-0"
               />
             </label>
-          </div>
+          </section>
 
           {/* Data Backup & Sample Journey */}
-          <div className="space-y-3 border-t border-[var(--border-subtle)] pt-5">
-            <h3 className="font-display text-base font-medium text-[var(--text-primary)]">
-              Data & portability
-            </h3>
+          <section
+            id="settings-data"
+            className="folio-sheet scroll-mt-20 space-y-4 p-5 sm:p-6"
+            aria-labelledby="settings-data-heading"
+          >
+            <div>
+              <h2
+                id="settings-data-heading"
+                className="font-display text-xl font-medium text-[var(--text-primary)]"
+              >
+                Data & portability
+              </h2>
+              <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                Export or restore your reading ledger as portable JSON, or try a sample journey.
+              </p>
+            </div>
 
             <div className="grid gap-2 sm:flex sm:flex-wrap sm:gap-2.5">
               <button
@@ -381,7 +473,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               </p>
             ) : null}
 
-            <div className="pt-2">
+            <div className="border-t border-[var(--border-subtle)] pt-3">
               <AnimatePresence mode="wait" initial={false}>
                 {!confirmReset ? (
                   <motion.button
@@ -434,14 +526,26 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 )}
               </AnimatePresence>
             </div>
-          </div>
+          </section>
 
           {/* App Updates */}
-          <div className="space-y-3 border-t border-[var(--border-subtle)] pt-5">
+          <section
+            id="settings-updates"
+            className="folio-sheet scroll-mt-20 space-y-3.5 p-5 sm:p-6"
+            aria-labelledby="settings-updates-heading"
+          >
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h3 className="font-display text-base font-medium text-[var(--text-primary)]">
-                App updates
-              </h3>
+              <div>
+                <h2
+                  id="settings-updates-heading"
+                  className="font-display text-xl font-medium text-[var(--text-primary)]"
+                >
+                  App updates
+                </h2>
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                  Keep Selah current while preserving all saved reading logs.
+                </p>
+              </div>
               <span className="font-mono text-xs text-[var(--text-secondary)]">
                 v{currentVersion}
                 {currentBuild !== null ? ` (build ${currentBuild})` : ''}
@@ -529,9 +633,9 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 {updateErrorMessage}
               </p>
             ) : null}
-          </div>
+          </section>
         </div>
       </div>
-    </ModalDialog>
+    </div>
   );
 };
