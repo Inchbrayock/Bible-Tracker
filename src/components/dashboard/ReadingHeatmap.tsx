@@ -1,5 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { ChevronDown } from 'lucide-react';
 import { buildHeatmapCalendar, formatPlainDate, todayPlainDate } from '../../lib/dates';
+import { FOLIO_EASE, SPRING_TACTILE } from '../../lib/motion';
 import { buildDailyChapterCounts } from '../../lib/progress';
 import { useBibleStore } from '../../store/useBibleStore';
 
@@ -24,6 +27,7 @@ export const ReadingHeatmap: React.FC = () => {
   const today = todayPlainDate();
   const [hoveredDay, setHoveredDay] = useState<{ date: string; count: number } | null>(null);
   const [selectedDay, setSelectedDay] = useState<{ date: string; count: number } | null>(null);
+  const [showMonthlyTable, setShowMonthlyTable] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -93,14 +97,22 @@ export const ReadingHeatmap: React.FC = () => {
       {/* Live readout bar */}
       <div className="mt-4 min-h-5 text-xs font-medium text-[var(--text-secondary)] tabular-nums">
         {inspectedDay ? (
-          <span>
+          <motion.span
+            key={inspectedDay.date}
+            initial={{ opacity: 0.4, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.12, ease: FOLIO_EASE }}
+            className="inline-block"
+          >
             <strong className="font-semibold text-[var(--text-primary)]">
               {formatPlainDate(inspectedDay.date)}
             </strong>{' '}
             — {inspectedDay.count} {inspectedDay.count === 1 ? 'chapter' : 'chapters'} read
-          </span>
+          </motion.span>
         ) : (
-          <span>Tap or hover any day square to inspect chapters logged.</span>
+          <span className="inline-block">
+            Tap or hover any day square to inspect chapters logged.
+          </span>
         )}
       </div>
 
@@ -155,12 +167,12 @@ export const ReadingHeatmap: React.FC = () => {
                         onFocus={() => setHoveredDay({ date: day.date, count })}
                         onMouseLeave={() => setHoveredDay(null)}
                         aria-label={`${formatPlainDate(day.date)}: ${count} chapters read`}
-                        className={`h-[14px] w-[14px] rounded-[2px] border transition-colors sm:h-[12px] sm:w-[12px] lg:aspect-square lg:h-auto lg:w-full ${
+                        className={`h-[14px] w-[14px] rounded-[2px] border transition-[transform,border-color] duration-150 sm:h-[12px] sm:w-[12px] lg:aspect-square lg:h-auto lg:w-full ${
                           day.isFuture
                             ? 'cursor-default border-transparent opacity-25'
                             : isSelected
-                              ? 'border-[var(--text-primary)]'
-                              : 'border-transparent hover:border-[var(--text-primary)]'
+                              ? 'z-10 scale-125 border-[var(--text-primary)] ring-1 ring-[var(--text-primary)]/40'
+                              : 'border-transparent hover:border-[var(--text-primary)] active:scale-90'
                         }`}
                         style={{ backgroundColor: LEVEL_COLORS[level] }}
                       />
@@ -174,44 +186,71 @@ export const ReadingHeatmap: React.FC = () => {
       </div>
 
       {/* Accessible semantic data table alternative */}
-      <details className="mt-4 border-t border-[var(--border-subtle)] pt-3">
-        <summary className="inline-flex min-h-9 cursor-pointer items-center text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
-          Monthly summary table
-        </summary>
-        {monthlySummary.length === 0 ? (
-          <p className="mt-2 text-xs text-[var(--text-secondary)]">
-            No reading sessions logged yet.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="mt-3 w-full max-w-md text-left text-xs">
-              <caption className="visually-hidden">Recent monthly Bible reading totals</caption>
-              <thead>
-                <tr className="border-b border-[var(--border-subtle)] text-[var(--text-secondary)]">
-                  <th scope="col" className="py-1.5 pr-4 font-medium">
-                    Month
-                  </th>
-                  <th scope="col" className="py-1.5 pr-4 font-medium">
-                    Active days
-                  </th>
-                  <th scope="col" className="py-1.5 font-medium">
-                    Chapters logged
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {monthlySummary.map(([month, stats]) => (
-                  <tr key={month} className="border-b border-[var(--border-subtle)]/60">
-                    <td className="py-1.5 pr-4 font-medium text-[var(--text-primary)]">{month}</td>
-                    <td className="py-1.5 pr-4 tabular-nums">{stats.activeDays}</td>
-                    <td className="py-1.5 tabular-nums">{stats.chapters}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </details>
+      <div className="mt-4 border-t border-[var(--border-subtle)] pt-3">
+        <button
+          type="button"
+          aria-expanded={showMonthlyTable}
+          onClick={() => setShowMonthlyTable((prev) => !prev)}
+          className="tactile-press inline-flex min-h-9 items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+        >
+          <motion.span
+            aria-hidden="true"
+            animate={{ rotate: showMonthlyTable ? 180 : 0 }}
+            transition={SPRING_TACTILE}
+            className="inline-flex"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+          </motion.span>
+          <span>Monthly summary table</span>
+        </button>
+
+        <AnimatePresence initial={false}>
+          {showMonthlyTable && (
+            <motion.div
+              key="monthly-table"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.24, ease: FOLIO_EASE }}
+              className="overflow-hidden"
+            >
+              {monthlySummary.length === 0 ? (
+                <p className="mt-2 text-xs text-[var(--text-secondary)]">
+                  No reading sessions logged yet.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="mt-3 w-full max-w-md text-left text-xs">
+                    <caption className="visually-hidden">Recent monthly Bible reading totals</caption>
+                    <thead>
+                      <tr className="border-b border-[var(--border-subtle)] text-[var(--text-secondary)]">
+                        <th scope="col" className="py-1.5 pr-4 font-medium">
+                          Month
+                        </th>
+                        <th scope="col" className="py-1.5 pr-4 font-medium">
+                          Active days
+                        </th>
+                        <th scope="col" className="py-1.5 font-medium">
+                          Chapters logged
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {monthlySummary.map(([month, stats]) => (
+                        <tr key={month} className="border-b border-[var(--border-subtle)]/60">
+                          <td className="py-1.5 pr-4 font-medium text-[var(--text-primary)]">{month}</td>
+                          <td className="py-1.5 pr-4 tabular-nums">{stats.activeDays}</td>
+                          <td className="py-1.5 tabular-nums">{stats.chapters}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </section>
   );
 };

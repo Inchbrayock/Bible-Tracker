@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Grid3x3, LayoutGrid, Search } from 'lucide-react';
 import { BIBLE_BOOKS, DIVISIONS } from '../../data/bibleCanon';
+import { FOLIO_EASE, SPRING_TACTILE, TACTILE_PILL_TAP } from '../../lib/motion';
 import { useBibleStore } from '../../store/useBibleStore';
 import type { BibleDivision, Testament } from '../../types/bible';
 import { BookCard } from './BookCard';
@@ -81,195 +83,253 @@ export const LibraryView: React.FC<LibraryViewProps> = ({ onOpenBook }) => {
             role="group"
             aria-label="Library view mode"
           >
-            <button
-              type="button"
-              onClick={() => setViewMode('bookshelf')}
-              aria-pressed={viewMode === 'bookshelf'}
-              className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors sm:min-h-0 ${
-                viewMode === 'bookshelf'
-                  ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-              <span>Bookshelf</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('mosaic')}
-              aria-pressed={viewMode === 'mosaic'}
-              className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors sm:min-h-0 ${
-                viewMode === 'mosaic'
-                  ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
-                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <Grid3x3 className="h-4 w-4" aria-hidden="true" />
-              <span>1,189 Mosaic</span>
-            </button>
+            {(['bookshelf', 'mosaic'] as const).map((mode) => {
+              const isActive = viewMode === mode;
+              return (
+                <motion.button
+                  key={mode}
+                  type="button"
+                  whileTap={TACTILE_PILL_TAP}
+                  onClick={() => setViewMode(mode)}
+                  aria-pressed={isActive}
+                  className={`relative inline-flex min-h-10 items-center justify-center gap-1.5 rounded-[4px] px-3 py-1.5 text-sm font-medium transition-colors sm:min-h-0 ${
+                    isActive
+                      ? 'text-[var(--text-primary)]'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="library-view-pill"
+                      transition={SPRING_TACTILE}
+                      aria-hidden="true"
+                      className="absolute inset-0 rounded-[4px] bg-[var(--bg-elevated)] shadow-2xs"
+                    />
+                  )}
+                  <span className="relative z-10 inline-flex items-center gap-1.5">
+                    {mode === 'bookshelf' ? (
+                      <>
+                        <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+                        <span>Bookshelf</span>
+                      </>
+                    ) : (
+                      <>
+                        <Grid3x3 className="h-4 w-4" aria-hidden="true" />
+                        <span>1,189 Mosaic</span>
+                      </>
+                    )}
+                  </span>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
 
-        {viewMode === 'bookshelf' && (
-          <div className="mt-5 space-y-3.5 sm:mt-6 sm:space-y-4">
-            <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-              {/* Search */}
-              <div className="relative w-full sm:min-w-56 sm:flex-1">
-                <Search
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]"
-                  aria-hidden="true"
-                />
-                <input
-                  type="search"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  aria-label="Search Bible books"
-                  placeholder="Search book or theme (Psalms, Grace, Rom)…"
-                  className="folio-input min-h-11 w-full py-2 pl-9 pr-3 text-base placeholder:text-[var(--text-secondary)] sm:min-h-10 sm:text-sm"
-                />
-              </div>
+        <AnimatePresence initial={false}>
+          {viewMode === 'bookshelf' && (
+            <motion.div
+              key="bookshelf-filters"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: FOLIO_EASE }}
+              className="overflow-hidden"
+            >
+              <div className="mt-5 space-y-3.5 sm:mt-6 sm:space-y-4">
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+                  {/* Search */}
+                  <div className="relative w-full sm:min-w-56 sm:flex-1">
+                    <Search
+                      className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-secondary)]"
+                      aria-hidden="true"
+                    />
+                    <input
+                      type="search"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      aria-label="Search Bible books"
+                      placeholder="Search book or theme (Psalms, Grace, Rom)…"
+                      className="folio-input min-h-11 w-full py-2 pl-9 pr-3 text-base placeholder:text-[var(--text-secondary)] sm:min-h-10 sm:text-sm"
+                    />
+                  </div>
 
-              <div className="flex flex-wrap items-center gap-2.5 sm:contents">
-                {/* Testament */}
-                <div className="grid flex-1 grid-cols-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5 text-xs font-medium sm:inline-flex sm:flex-none">
-                  {(['ALL', 'OT', 'NT'] as const).map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => {
-                        setTestament(t);
-                        setDivision('ALL');
-                      }}
-                      aria-pressed={testament === t}
-                      className={`min-h-9 rounded-[4px] px-2 py-1.5 transition-colors sm:min-h-0 sm:px-3 ${
-                        testament === t
-                          ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
-                          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                      }`}
+                  <div className="flex flex-wrap items-center gap-2.5 sm:contents">
+                    {/* Testament */}
+                    <div className="grid flex-1 grid-cols-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0.5 text-xs font-medium sm:inline-flex sm:flex-none">
+                      {(['ALL', 'OT', 'NT'] as const).map((t) => {
+                        const isActive = testament === t;
+                        return (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => {
+                              setTestament(t);
+                              setDivision('ALL');
+                            }}
+                            aria-pressed={isActive}
+                            className={`relative min-h-9 rounded-[4px] px-2 py-1.5 transition-colors sm:min-h-0 sm:px-3 ${
+                              isActive
+                                ? 'text-[var(--text-primary)]'
+                                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                            }`}
+                          >
+                            {isActive && (
+                              <motion.span
+                                layoutId="library-testament-pill"
+                                transition={SPRING_TACTILE}
+                                aria-hidden="true"
+                                className="absolute inset-0 rounded-[4px] bg-[var(--bg-elevated)] shadow-2xs"
+                              />
+                            )}
+                            <span className="relative z-10">
+                              {t === 'ALL' ? 'All (66)' : t === 'OT' ? 'Old (39)' : 'New (27)'}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Status */}
+                    <select
+                      aria-label="Filter books by completion status"
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value as StatusFilter)}
+                      className="folio-input min-h-10 px-3 py-2 text-base font-medium sm:min-h-0 sm:text-xs"
                     >
-                      {t === 'ALL' ? 'All (66)' : t === 'OT' ? 'Old (39)' : 'New (27)'}
-                    </button>
-                  ))}
+                      <option value="all">All statuses</option>
+                      <option value="in-progress">In progress</option>
+                      <option value="completed">Completed</option>
+                      <option value="unread">Unread</option>
+                    </select>
+                  </div>
                 </div>
 
-                {/* Status */}
-                <select
-                  aria-label="Filter books by completion status"
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as StatusFilter)}
-                  className="folio-input min-h-10 px-3 py-2 text-base font-medium sm:min-h-0 sm:text-xs"
-                >
-                  <option value="all">All statuses</option>
-                  <option value="in-progress">In progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="unread">Unread</option>
-                </select>
+                {/* Division Chips (horizontal scroll rail on mobile, wrap on sm+) */}
+                <div className="-mx-3.5 flex flex-nowrap gap-1.5 overflow-x-auto px-3.5 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+                  <motion.button
+                    type="button"
+                    whileTap={TACTILE_PILL_TAP}
+                    onClick={() => setDivision('ALL')}
+                    aria-pressed={division === 'ALL'}
+                    className={`relative min-h-9 shrink-0 whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-medium transition-colors sm:min-h-0 sm:px-2.5 sm:py-1 ${
+                      division === 'ALL'
+                        ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
+                        : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    All divisions
+                  </motion.button>
+                  {availableDivisions.map((div) => (
+                    <motion.button
+                      key={div.id}
+                      type="button"
+                      whileTap={TACTILE_PILL_TAP}
+                      onClick={() => setDivision(div.id)}
+                      aria-pressed={division === div.id}
+                      className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-medium transition-colors sm:min-h-0 sm:px-2.5 sm:py-1 ${
+                        division === div.id
+                          ? 'border-[var(--text-primary)] bg-[var(--bg-elevated)] text-[var(--text-primary)]'
+                          : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: div.colorVar }}
+                      />
+                      {div.shortLabel}
+                    </motion.button>
+                  ))}
+                </div>
               </div>
-            </div>
-
-            {/* Division Chips (horizontal scroll rail on mobile, wrap on sm+) */}
-            <div className="-mx-3.5 flex flex-nowrap gap-1.5 overflow-x-auto px-3.5 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
-              <button
-                type="button"
-                onClick={() => setDivision('ALL')}
-                aria-pressed={division === 'ALL'}
-                className={`min-h-9 shrink-0 whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-medium transition-colors sm:min-h-0 sm:px-2.5 sm:py-1 ${
-                  division === 'ALL'
-                    ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-                    : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                All divisions
-              </button>
-              {availableDivisions.map((div) => (
-                <button
-                  key={div.id}
-                  type="button"
-                  onClick={() => setDivision(div.id)}
-                  aria-pressed={division === div.id}
-                  className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-medium transition-colors sm:min-h-0 sm:px-2.5 sm:py-1 ${
-                    division === div.id
-                      ? 'border-[var(--text-primary)] bg-[var(--bg-elevated)] text-[var(--text-primary)]'
-                      : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
-                  }`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="h-2 w-2 rounded-full"
-                    style={{ backgroundColor: div.colorVar }}
-                  />
-                  {div.shortLabel}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
       {viewMode === 'mosaic' ? (
-        <WholeBibleMosaic onSelectBook={onOpenBook} />
+        <motion.div
+          key="mosaic"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: FOLIO_EASE }}
+        >
+          <WholeBibleMosaic onSelectBook={onOpenBook} />
+        </motion.div>
       ) : filteredBooks.length === 0 ? (
-        <div className="folio-sheet p-10 text-center">
+        <motion.div
+          key="empty-books"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.18, ease: FOLIO_EASE }}
+          className="folio-sheet p-10 text-center"
+        >
           <p className="font-display text-xl font-medium text-[var(--text-primary)]">
             No matching books found
           </p>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
             Clear your search or choose another status filter.
           </p>
-        </div>
+        </motion.div>
       ) : (
-        <div className="space-y-10">
-          {otFiltered.length > 0 && (
-            <section aria-labelledby="ot-section-heading">
-              <div className="mb-4 flex items-baseline justify-between border-b border-[var(--border-subtle)] pb-2">
-                <h2
-                  id="ot-section-heading"
-                  className="font-display text-xl font-medium text-[var(--text-primary)]"
-                >
-                  Old Testament
-                </h2>
-                <span className="text-xs text-[var(--text-secondary)] tabular-nums">
-                  {otFiltered.length} {otFiltered.length === 1 ? 'book' : 'books'}
-                </span>
-              </div>
-              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {otFiltered.map((book) => (
-                  <BookCard
-                    key={book.id}
-                    progress={summary.bookProgressById[book.id]}
-                    onSelect={onOpenBook}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+        <motion.div
+          key="bookshelf"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: FOLIO_EASE }}
+          className="space-y-10"
+        >
+            {otFiltered.length > 0 && (
+              <section aria-labelledby="ot-section-heading">
+                <div className="mb-4 flex items-baseline justify-between border-b border-[var(--border-subtle)] pb-2">
+                  <h2
+                    id="ot-section-heading"
+                    className="font-display text-xl font-medium text-[var(--text-primary)]"
+                  >
+                    Old Testament
+                  </h2>
+                  <span className="text-xs text-[var(--text-secondary)] tabular-nums">
+                    {otFiltered.length} {otFiltered.length === 1 ? 'book' : 'books'}
+                  </span>
+                </div>
+                <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {otFiltered.map((book) => (
+                    <BookCard
+                      key={book.id}
+                      progress={summary.bookProgressById[book.id]}
+                      onSelect={onOpenBook}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
 
-          {ntFiltered.length > 0 && (
-            <section aria-labelledby="nt-section-heading">
-              <div className="mb-4 flex items-baseline justify-between border-b border-[var(--border-subtle)] pb-2">
-                <h2
-                  id="nt-section-heading"
-                  className="font-display text-xl font-medium text-[var(--text-primary)]"
-                >
-                  New Testament
-                </h2>
-                <span className="text-xs text-[var(--text-secondary)] tabular-nums">
-                  {ntFiltered.length} {ntFiltered.length === 1 ? 'book' : 'books'}
-                </span>
-              </div>
-              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {ntFiltered.map((book) => (
-                  <BookCard
-                    key={book.id}
-                    progress={summary.bookProgressById[book.id]}
-                    onSelect={onOpenBook}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
-      )}
+            {ntFiltered.length > 0 && (
+              <section aria-labelledby="nt-section-heading">
+                <div className="mb-4 flex items-baseline justify-between border-b border-[var(--border-subtle)] pb-2">
+                  <h2
+                    id="nt-section-heading"
+                    className="font-display text-xl font-medium text-[var(--text-primary)]"
+                  >
+                    New Testament
+                  </h2>
+                  <span className="text-xs text-[var(--text-secondary)] tabular-nums">
+                    {ntFiltered.length} {ntFiltered.length === 1 ? 'book' : 'books'}
+                  </span>
+                </div>
+                <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {ntFiltered.map((book) => (
+                    <BookCard
+                      key={book.id}
+                      progress={summary.bookProgressById[book.id]}
+                      onSelect={onOpenBook}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </motion.div>
+        )}
     </div>
   );
 };

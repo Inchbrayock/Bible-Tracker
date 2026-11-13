@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
+import { motion } from 'motion/react';
 import { Check, CheckCircle2, Compass } from 'lucide-react';
 import { READING_PLANS } from '../../data/readingPlans';
 import { todayPlainDate } from '../../lib/dates';
+import { SPRING_PROGRESS, SPRING_SEAL, SPRING_TACTILE, TACTILE_TAP } from '../../lib/motion';
 import {
   computePlanProgress,
   getActiveReadingPlan,
@@ -46,9 +48,11 @@ export const PlansView: React.FC = () => {
         {READING_PLANS.map((plan) => {
           const isSelected = plan.id === activePlan.id;
           return (
-            <button
+            <motion.button
               key={plan.id}
               type="button"
+              whileTap={TACTILE_TAP}
+              transition={SPRING_TACTILE}
               onClick={() => void updatePreferences({ activePlanId: plan.id })}
               aria-pressed={isSelected}
               className={`folio-sheet relative overflow-hidden p-5 text-left transition-colors ${
@@ -68,10 +72,14 @@ export const PlansView: React.FC = () => {
                     {plan.subtitle}
                   </span>
                   {isSelected && (
-                    <span className="inline-flex items-center gap-1 rounded bg-[var(--color-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--color-accent)]">
+                    <motion.span
+                      layoutId="active-plan-badge"
+                      transition={SPRING_TACTILE}
+                      className="inline-flex items-center gap-1 rounded bg-[var(--color-accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--color-accent)]"
+                    >
                       <Compass className="h-3 w-3" aria-hidden="true" />
                       Active
-                    </span>
+                    </motion.span>
                   )}
                 </div>
                 <h2 className="mt-1 font-display text-xl font-medium text-[var(--text-primary)]">
@@ -81,7 +89,7 @@ export const PlansView: React.FC = () => {
                   {plan.description}
                 </p>
               </div>
-            </button>
+            </motion.button>
           );
         })}
       </div>
@@ -100,11 +108,13 @@ export const PlansView: React.FC = () => {
 
           <div className="w-full max-w-xs">
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
-              <div
-                className="h-full rounded-full bg-[var(--color-sage)] transition-[width] duration-400"
-                style={{
+              <motion.div
+                className="h-full rounded-full bg-[var(--color-sage)]"
+                initial={false}
+                animate={{
                   width: `${(completedDaysCount / activePlan.durationDays) * 100}%`,
                 }}
+                transition={SPRING_PROGRESS}
               />
             </div>
           </div>
@@ -117,7 +127,11 @@ export const PlansView: React.FC = () => {
               className="flex flex-col justify-between gap-3 px-4 py-3.5 sm:flex-row sm:items-center"
             >
               <div className="flex min-w-0 items-center gap-3.5">
-                <span
+                <motion.span
+                  key={done ? `done-${day.day}` : `todo-${day.day}`}
+                  initial={done ? { scale: 0.72 } : false}
+                  animate={{ scale: 1 }}
+                  transition={SPRING_SEAL}
                   className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums ${
                     done
                       ? 'bg-[var(--color-sage-soft)] text-[var(--color-sage)]'
@@ -125,7 +139,7 @@ export const PlansView: React.FC = () => {
                   }`}
                 >
                   {done ? <Check className="h-4 w-4" aria-hidden="true" /> : day.day}
-                </span>
+                </motion.span>
                 <div className="min-w-0">
                   <p className="text-xs font-medium text-[var(--text-secondary)]">Day {day.day}</p>
                   <p className="font-display text-base font-medium leading-snug text-[var(--text-primary)]">
@@ -135,18 +149,25 @@ export const PlansView: React.FC = () => {
               </div>
 
               {done ? (
-                <span className="inline-flex items-center gap-1.5 pl-11 text-xs font-medium text-[var(--color-sage)] sm:shrink-0 sm:pl-0">
+                <motion.span
+                  initial={{ opacity: 0, x: 6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={SPRING_TACTILE}
+                  className="inline-flex items-center gap-1.5 pl-11 text-xs font-medium text-[var(--color-sage)] sm:shrink-0 sm:pl-0"
+                >
                   <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
                   Completed
-                </span>
+                </motion.span>
               ) : (
-                <button
+                <motion.button
                   type="button"
+                  whileTap={TACTILE_TAP}
+                  transition={SPRING_TACTILE}
                   onClick={() => void handleCompletePlanDay(day.day)}
                   className="btn-primary inline-flex min-h-10 w-full shrink-0 items-center justify-center rounded-md px-3.5 py-2 text-xs font-medium hover:opacity-90 sm:min-h-9 sm:w-auto sm:py-1.5"
                 >
                   Log Day {day.day}
-                </button>
+                </motion.button>
               )}
             </li>
           ))}

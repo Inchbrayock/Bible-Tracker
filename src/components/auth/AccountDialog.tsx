@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 import {
   AlertCircle,
   Check,
@@ -11,6 +12,7 @@ import {
   UserCheck,
   X,
 } from 'lucide-react';
+import { SPRING_TACTILE, TACTILE_PILL_TAP, TACTILE_TAP } from '../../lib/motion';
 import { useBibleStore } from '../../store/useBibleStore';
 import { ModalDialog } from '../ui/ModalDialog';
 
@@ -218,8 +220,8 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
       labelledBy="account-dialog-title"
       className="max-w-md"
     >
-      <div className="flex max-h-[92dvh] flex-col sm:max-h-[88dvh]">
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3.5 sm:px-6 sm:py-4">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 pt-6 pb-3.5 sm:px-6 sm:py-4">
           <div className="min-w-0">
             <h2
               id="account-dialog-title"
@@ -233,17 +235,18 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                 : 'Sign in or create an account to back up and sync across devices.'}
             </p>
           </div>
-          <button
+          <motion.button
             type="button"
+            whileTap={TACTILE_PILL_TAP}
             onClick={onClose}
             aria-label="Close account dialog"
             className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] sm:min-h-9 sm:min-w-9"
           >
             <X className="h-4 w-4" aria-hidden="true" />
-          </button>
+          </motion.button>
         </div>
 
-        <div className="space-y-4 overflow-y-auto p-4 sm:space-y-5 sm:p-6">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:space-y-5 sm:p-6">
           {!firebaseAvailable ? (
             <div className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4 text-sm text-[var(--text-secondary)]">
               <p className="font-medium text-[var(--text-primary)]">
@@ -471,15 +474,17 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
               )}
 
               <div className="space-y-2.5">
-                <button
+                <motion.button
                   type="button"
+                  whileTap={TACTILE_TAP}
+                  transition={SPRING_TACTILE}
                   disabled={submitting}
                   onClick={() => void runProviderSignIn(signInWithGoogle, 'Google sign-in failed.')}
                   className="flex min-h-11 w-full items-center justify-center gap-2.5 rounded-md border border-[var(--border-strong)] bg-[var(--bg-canvas)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] disabled:opacity-60 sm:min-h-10"
                 >
                   <GoogleMark />
                   <span>Continue with Google</span>
-                </button>
+                </motion.button>
               </div>
 
               <div className="relative flex items-center py-1">
@@ -496,40 +501,42 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                   role="tablist"
                   aria-label="Email authentication mode"
                 >
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === 'signin'}
-                    onClick={() => {
-                      setMode('signin');
-                      setErrorMsg(null);
-                      setStatusMsg(null);
-                    }}
-                    className={`min-h-9 rounded-[4px] py-1.5 transition-colors sm:min-h-0 ${
-                      mode === 'signin'
-                        ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
-                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                    }`}
-                  >
-                    Sign in
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === 'signup'}
-                    onClick={() => {
-                      setMode('signup');
-                      setErrorMsg(null);
-                      setStatusMsg(null);
-                    }}
-                    className={`min-h-9 rounded-[4px] py-1.5 transition-colors sm:min-h-0 ${
-                      mode === 'signup'
-                        ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-2xs'
-                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                    }`}
-                  >
-                    Create account
-                  </button>
+                  {(
+                    [
+                      { id: 'signin', label: 'Sign in' },
+                      { id: 'signup', label: 'Create account' },
+                    ] as const
+                  ).map((tabOpt) => {
+                    const isActive = mode === tabOpt.id;
+                    return (
+                      <button
+                        key={tabOpt.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={isActive}
+                        onClick={() => {
+                          setMode(tabOpt.id);
+                          setErrorMsg(null);
+                          setStatusMsg(null);
+                        }}
+                        className={`relative min-h-9 rounded-[4px] py-1.5 transition-colors sm:min-h-0 ${
+                          isActive
+                            ? 'text-[var(--text-primary)]'
+                            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                        }`}
+                      >
+                        {isActive && (
+                          <motion.span
+                            layoutId="auth-mode-pill"
+                            transition={SPRING_TACTILE}
+                            aria-hidden="true"
+                            className="absolute inset-0 rounded-[4px] bg-[var(--bg-elevated)] shadow-2xs"
+                          />
+                        )}
+                        <span className="relative z-10">{tabOpt.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
@@ -622,8 +629,10 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                   </p>
                 )}
 
-                <button
+                <motion.button
                   type="submit"
+                  whileTap={TACTILE_TAP}
+                  transition={SPRING_TACTILE}
                   disabled={submitting}
                   className="btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60 sm:min-h-10"
                 >
@@ -637,7 +646,7 @@ export const AccountDialog: React.FC<AccountDialogProps> = ({ open, onClose }) =
                           ? 'Create Sanctuary account'
                           : 'Send reset link'}
                   </span>
-                </button>
+                </motion.button>
 
                 {mode === 'reset' && (
                   <button

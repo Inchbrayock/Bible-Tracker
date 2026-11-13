@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { AchievementModal } from './components/achievements/AchievementModal';
 import { AchievementsView } from './components/achievements/AchievementsView';
@@ -12,6 +12,7 @@ import { SettingsDialog } from './components/settings/SettingsDialog';
 import { AppHeader, type AppTab } from './components/ui/AppHeader';
 import { CelebrationToast } from './components/ui/CelebrationToast';
 import { UpdateBanner } from './components/ui/UpdateBanner';
+import { FOLIO_EASE } from './lib/motion';
 import { hideNativeSplashScreen, subscribeNativeBackButton } from './lib/nativeShell';
 import { AppUpdaterProvider } from './lib/useAppUpdater';
 import { BibleStoreProvider, useBibleStore } from './store/useBibleStore';
@@ -34,6 +35,7 @@ const SanctuaryAppContent: React.FC = () => {
   } = useBibleStore();
 
   const [activeTab, setActiveTab] = useState<AppTab>('dashboard');
+
   const [journalInitialTab, setJournalInitialTab] = useState<'journal' | 'plans'>('journal');
   const [openBookId, setOpenBookId] = useState<string | null>(null);
   const [inspectedAchievement, setInspectedAchievement] = useState<{
@@ -42,6 +44,14 @@ const SanctuaryAppContent: React.FC = () => {
   } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+
+  const navigateToTab = useCallback(
+    (nextTab: AppTab, options?: { journalSubTab?: 'journal' | 'plans' }) => {
+      setJournalInitialTab(options?.journalSubTab ?? 'journal');
+      setActiveTab(nextTab);
+    },
+    []
+  );
 
   const backStateRef = useRef({
     inspectedAchievement,
@@ -84,13 +94,12 @@ const SanctuaryAppContent: React.FC = () => {
         return true;
       }
       if (state.activeTab !== 'dashboard') {
-        setJournalInitialTab('journal');
-        setActiveTab('dashboard');
+        navigateToTab('dashboard');
         return true;
       }
       return false;
     });
-  }, []);
+  }, [navigateToTab]);
 
   useEffect(() => {
     document.title = TAB_TITLES[activeTab];
@@ -107,10 +116,7 @@ const SanctuaryAppContent: React.FC = () => {
 
       <AppHeader
         activeTab={activeTab}
-        onSelectTab={(tab) => {
-          setJournalInitialTab('journal');
-          setActiveTab(tab);
-        }}
+        onSelectTab={(tab) => navigateToTab(tab)}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenAccount={() => setAccountOpen(true)}
       />
@@ -133,7 +139,7 @@ const SanctuaryAppContent: React.FC = () => {
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.16, ease: FOLIO_EASE }}
             >
               {activeTab === 'dashboard' && (
                 <DashboardView
@@ -141,10 +147,7 @@ const SanctuaryAppContent: React.FC = () => {
                   onInspectAchievement={(status) =>
                     setInspectedAchievement({ status, isNew: false })
                   }
-                  onNavigateTab={(tab, options) => {
-                    setJournalInitialTab(options?.journalSubTab ?? 'journal');
-                    setActiveTab(tab);
-                  }}
+                  onNavigateTab={(tab, options) => navigateToTab(tab, options)}
                 />
               )}
               {activeTab === 'library' && <LibraryView onOpenBook={setOpenBookId} />}
@@ -163,7 +166,7 @@ const SanctuaryAppContent: React.FC = () => {
         )}
       </main>
 
-      <footer className="border-t border-[var(--border-subtle)] pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0">
+      <footer className="border-t border-[var(--border-subtle)] pb-[calc(5.25rem+env(safe-area-inset-bottom))] lg:pb-0">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-5 text-xs text-[var(--text-secondary)] sm:px-6">
           <span className="font-display text-sm font-medium text-[var(--text-primary)]">
             Selah

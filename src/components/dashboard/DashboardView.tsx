@@ -1,11 +1,14 @@
 import React, { useMemo } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Award, BookOpen, CalendarCheck, Flame, TrendingUp } from 'lucide-react';
 import { BOOKS_BY_ID, DIVISION_META_BY_ID } from '../../data/bibleCanon';
 import { formatPlainDate } from '../../lib/dates';
+import { FOLIO_EASE, SPRING_PROGRESS, SPRING_TACTILE, TACTILE_TAP } from '../../lib/motion';
 import { formatChapterRanges } from '../../lib/progress';
 import { useBibleStore } from '../../store/useBibleStore';
 import type { AchievementStatus } from '../../types/bible';
 import { MedallionIcon } from '../achievements/MedallionIcon';
+import { AnimatedNumber } from '../ui/AnimatedNumber';
 import { SanctuaryLamp } from '../ui/SanctuaryLamp';
 import { CanonicalSpineBar } from './CanonicalSpineBar';
 import { ContinueReadingCard } from './ContinueReadingCard';
@@ -51,42 +54,58 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   );
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
+  const wholePct = formatPercent(summary.totalChaptersRead, summary.totalChapters);
+  const otPct = formatPercent(summary.otChaptersRead, summary.otTotalChapters);
+  const ntPct = formatPercent(summary.ntChaptersRead, summary.ntTotalChapters);
 
   return (
     <div className="space-y-6 sm:space-y-8">
       {/* First-time Opening Strip (Editorial, unboxed, calm) */}
-      {logs.length === 0 && (
-        <section className="border-b border-[var(--border-subtle)] pb-6 sm:pb-7">
-          <div className="flex flex-col justify-between gap-4 sm:gap-5 lg:flex-row lg:items-end">
-            <div className="max-w-[60ch]">
-              <h2 className="font-display text-2xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[1.75rem]">
-                A quiet ledger for daily Scripture reading
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)] sm:text-base">
-                Record chapters across all 66 books, trace your rhythm across the year, and keep
-                private study notes synced to your account or saved directly in your browser.
-              </p>
+      <AnimatePresence initial={false}>
+        {logs.length === 0 && (
+          <motion.section
+            key="first-time-strip"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            transition={{ duration: 0.28, ease: FOLIO_EASE }}
+            className="overflow-hidden border-b border-[var(--border-subtle)] pb-6 sm:pb-7"
+          >
+            <div className="flex flex-col justify-between gap-4 sm:gap-5 lg:flex-row lg:items-end">
+              <div className="max-w-[60ch]">
+                <h2 className="font-display text-2xl font-medium tracking-tight text-[var(--text-primary)] sm:text-[1.75rem]">
+                  A quiet ledger for daily Scripture reading
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--text-secondary)] sm:text-base">
+                  Record chapters across all 66 books, trace your rhythm across the year, and keep
+                  private study notes synced to your account or saved directly in your browser.
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:gap-3">
+                <motion.button
+                  type="button"
+                  whileTap={TACTILE_TAP}
+                  transition={SPRING_TACTILE}
+                  onClick={() => onOpenBook('john')}
+                  className="btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90 sm:min-h-10 sm:w-auto"
+                >
+                  <BookOpen className="h-4 w-4" aria-hidden="true" />
+                  <span>Start in John</span>
+                </motion.button>
+                <motion.button
+                  type="button"
+                  whileTap={TACTILE_TAP}
+                  transition={SPRING_TACTILE}
+                  onClick={() => void activateDemoJourney()}
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] sm:min-h-10 sm:w-auto"
+                >
+                  Preview Sample Journey
+                </motion.button>
+              </div>
             </div>
-            <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:gap-3">
-              <button
-                type="button"
-                onClick={() => onOpenBook('john')}
-                className="btn-primary inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90 sm:min-h-10 sm:w-auto"
-              >
-                <BookOpen className="h-4 w-4" aria-hidden="true" />
-                <span>Start in John</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => void activateDemoJourney()}
-                className="inline-flex min-h-11 w-full items-center justify-center rounded-md border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] sm:min-h-10 sm:w-auto"
-              >
-                Preview Sample Journey
-              </button>
-            </div>
-          </div>
-        </section>
-      )}
+          </motion.section>
+        )}
+      </AnimatePresence>
 
       {/* Band 1: Canonical Progress Ledger + Signature 66-Book Proportional Bar */}
       <section aria-labelledby="overview-heading" className="folio-sheet p-4 sm:p-8">
@@ -99,13 +118,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Canonical Journey
             </h1>
             <p className="mt-1 text-sm text-[var(--text-secondary)] tabular-nums">
-              {summary.booksCompleted} of 66 books completed, {summary.booksInProgress} in progress
+              <AnimatedNumber value={summary.booksCompleted}>{summary.booksCompleted}</AnimatedNumber> of 66 books completed,{' '}
+              <AnimatedNumber value={summary.booksInProgress}>{summary.booksInProgress}</AnimatedNumber> in progress
             </p>
           </div>
           <button
             type="button"
             onClick={() => onNavigateTab('library')}
-            className="inline-flex min-h-9 items-center text-sm font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
+            className="tactile-press inline-flex min-h-9 items-center text-sm font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
           >
             Explore 66 books
           </button>
@@ -117,10 +137,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <p className="text-xs font-medium text-[var(--text-secondary)]">Whole Bible</p>
             <div className="mt-1 flex items-baseline gap-3">
               <span className="font-display text-3xl font-medium tracking-tight tabular-nums text-[var(--text-primary)] sm:text-4xl">
-                {formatPercent(summary.totalChaptersRead, summary.totalChapters)}
+                <AnimatedNumber value={wholePct}>{wholePct}</AnimatedNumber>
               </span>
               <span className="text-sm text-[var(--text-secondary)] tabular-nums">
-                {summary.totalChaptersRead.toLocaleString()} / {summary.totalChapters.toLocaleString()} ch
+                <AnimatedNumber value={summary.totalChaptersRead}>
+                  {summary.totalChaptersRead.toLocaleString()}
+                </AnimatedNumber>{' '}
+                / {summary.totalChapters.toLocaleString()} ch
               </span>
             </div>
           </div>
@@ -129,10 +152,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <p className="text-xs font-medium text-[var(--text-secondary)]">Old Testament</p>
             <div className="mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
               <span className="font-display text-2xl font-medium tracking-tight tabular-nums text-[var(--text-primary)] sm:text-4xl">
-                {formatPercent(summary.otChaptersRead, summary.otTotalChapters)}
+                <AnimatedNumber value={otPct}>{otPct}</AnimatedNumber>
               </span>
               <span className="text-xs text-[var(--text-secondary)] tabular-nums sm:text-sm">
-                {summary.otChaptersRead.toLocaleString()} / {summary.otTotalChapters.toLocaleString()} ch
+                <AnimatedNumber value={summary.otChaptersRead}>
+                  {summary.otChaptersRead.toLocaleString()}
+                </AnimatedNumber>{' '}
+                / {summary.otTotalChapters.toLocaleString()} ch
               </span>
             </div>
           </div>
@@ -141,10 +167,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <p className="text-xs font-medium text-[var(--text-secondary)]">New Testament</p>
             <div className="mt-1 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
               <span className="font-display text-2xl font-medium tracking-tight tabular-nums text-[var(--text-primary)] sm:text-4xl">
-                {formatPercent(summary.ntChaptersRead, summary.ntTotalChapters)}
+                <AnimatedNumber value={ntPct}>{ntPct}</AnimatedNumber>
               </span>
               <span className="text-xs text-[var(--text-secondary)] tabular-nums sm:text-sm">
-                {summary.ntChaptersRead.toLocaleString()} / {summary.ntTotalChapters.toLocaleString()} ch
+                <AnimatedNumber value={summary.ntChaptersRead}>
+                  {summary.ntChaptersRead.toLocaleString()}
+                </AnimatedNumber>{' '}
+                / {summary.ntTotalChapters.toLocaleString()} ch
               </span>
             </div>
           </div>
@@ -173,7 +202,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </h2>
                 <div className="mt-1.5 flex items-baseline gap-2">
                   <span className="font-display text-3xl font-medium tabular-nums text-[var(--text-primary)]">
-                    {summary.currentStreak}
+                    <AnimatedNumber value={summary.currentStreak}>
+                      {summary.currentStreak}
+                    </AnimatedNumber>
                   </span>
                   <span className="text-sm text-[var(--text-secondary)]">
                     {summary.currentStreak === 1 ? 'day streak' : 'days streak'}
@@ -190,7 +221,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   Best streak
                 </span>
                 <p className="mt-1 font-display text-lg font-medium tabular-nums text-[var(--text-primary)]">
-                  {summary.longestStreak} {summary.longestStreak === 1 ? 'day' : 'days'}
+                  <AnimatedNumber value={summary.longestStreak}>
+                    {summary.longestStreak}
+                  </AnimatedNumber>{' '}
+                  {summary.longestStreak === 1 ? 'day' : 'days'}
                 </p>
               </div>
               <div className="pl-4">
@@ -199,7 +233,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   Weekly pace
                 </span>
                 <p className="mt-1 font-display text-lg font-medium tabular-nums text-[var(--text-primary)]">
-                  {summary.chaptersPerWeekAvg} ch/wk
+                  <AnimatedNumber value={summary.chaptersPerWeekAvg}>
+                    {summary.chaptersPerWeekAvg}
+                  </AnimatedNumber>{' '}
+                  ch/wk
                 </p>
               </div>
             </div>
@@ -224,8 +261,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Closest Seal Spotlight */}
           {closestAchievement ? (
-            <button
+            <motion.button
               type="button"
+              whileTap={TACTILE_TAP}
+              transition={SPRING_TACTILE}
               onClick={() => onInspectAchievement(closestAchievement)}
               className="folio-sheet flex w-full items-center gap-4 p-4 text-left transition-colors hover:border-[var(--border-strong)]"
             >
@@ -249,16 +288,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   {closestAchievement.definition.title}
                 </p>
                 <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
-                  <div
+                  <motion.div
                     className="h-full rounded-full bg-[var(--color-accent)]"
-                    style={{ width: `${closestAchievement.percentage}%` }}
+                    initial={false}
+                    animate={{ width: `${closestAchievement.percentage}%` }}
+                    transition={SPRING_PROGRESS}
                   />
                 </div>
               </div>
-            </button>
+            </motion.button>
           ) : (
-            <button
+            <motion.button
               type="button"
+              whileTap={TACTILE_TAP}
+              transition={SPRING_TACTILE}
               onClick={() => onNavigateTab('achievements')}
               className="folio-sheet flex w-full items-center justify-between p-4 text-left transition-colors hover:border-[var(--border-strong)]"
             >
@@ -269,7 +312,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </p>
               </div>
               <span className="text-xs font-medium text-[var(--text-secondary)]">View all</span>
-            </button>
+            </motion.button>
           )}
         </aside>
       </div>
@@ -299,7 +342,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <button
                 type="button"
                 onClick={() => onNavigateTab('journal')}
-                className="inline-flex min-h-9 items-center text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
+                className="tactile-press inline-flex min-h-9 items-center text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
               >
                 View journal
               </button>
@@ -311,51 +354,62 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </p>
             ) : (
               <ul className="mt-2 divide-y divide-[var(--border-subtle)]/70">
-                {recentLogs.map((log) => {
-                  const book = BOOKS_BY_ID[log.bookId];
-                  if (!book) return null;
-                  const divMeta = DIVISION_META_BY_ID[book.division];
-                  return (
-                    <li key={log.id}>
-                      <button
-                        type="button"
-                        onClick={() => onOpenBook(book.id)}
-                        className="group -mx-2 flex w-[calc(100%+1rem)] items-start gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-[var(--bg-surface)]/70"
+                <AnimatePresence initial={false}>
+                  {recentLogs.map((log) => {
+                    const book = BOOKS_BY_ID[log.bookId];
+                    if (!book) return null;
+                    const divMeta = DIVISION_META_BY_ID[book.division];
+                    return (
+                      <motion.li
+                        key={log.id}
+                        layout
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.22, ease: FOLIO_EASE }}
                       >
-                        <span
-                          aria-hidden="true"
-                          className="mt-1 h-4 w-1 shrink-0 rounded-full"
-                          style={{ backgroundColor: divMeta.colorVar }}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline justify-between gap-3">
-                            <span className="truncate text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--color-accent)]">
-                              {book.name} {formatChapterRanges(log.chapters)}
-                            </span>
-                            <span className="shrink-0 text-xs text-[var(--text-secondary)] tabular-nums">
-                              {formatPlainDate(log.readDate, { month: 'short', day: 'numeric' })}
-                            </span>
+                        <button
+                          type="button"
+                          onClick={() => onOpenBook(book.id)}
+                          className="tactile-press group -mx-2 flex w-[calc(100%+1rem)] items-start gap-3 rounded-md px-2 py-2.5 text-left transition-colors hover:bg-[var(--bg-surface)]/70"
+                        >
+                          <span
+                            aria-hidden="true"
+                            className="mt-1 h-4 w-1 shrink-0 rounded-full"
+                            style={{ backgroundColor: divMeta.colorVar }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-baseline justify-between gap-3">
+                              <span className="truncate text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--color-accent)]">
+                                {book.name} {formatChapterRanges(log.chapters)}
+                              </span>
+                              <span className="shrink-0 text-xs text-[var(--text-secondary)] tabular-nums">
+                                {formatPlainDate(log.readDate, { month: 'short', day: 'numeric' })}
+                              </span>
+                            </div>
+                            {log.note ? (
+                              <p className="mt-0.5 line-clamp-1 font-display text-xs italic text-[var(--text-secondary)]">
+                                “{log.note}”
+                              </p>
+                            ) : null}
                           </div>
-                          {log.note ? (
-                            <p className="mt-0.5 line-clamp-1 font-display text-xs italic text-[var(--text-secondary)]">
-                              “{log.note}”
-                            </p>
-                          ) : null}
-                        </div>
-                      </button>
-                    </li>
-                  );
-                })}
+                        </button>
+                      </motion.li>
+                    );
+                  })}
+                </AnimatePresence>
               </ul>
             )}
           </div>
 
           <div className="mt-4 flex items-center justify-between border-t border-[var(--border-subtle)] pt-3 text-xs text-[var(--text-secondary)] tabular-nums">
             <span>
-              {summary.totalSessions} {summary.totalSessions === 1 ? 'session' : 'sessions'} recorded
+              <AnimatedNumber value={summary.totalSessions}>{summary.totalSessions}</AnimatedNumber>{' '}
+              {summary.totalSessions === 1 ? 'session' : 'sessions'} recorded
             </span>
             <span>
-              {summary.notesCount} {summary.notesCount === 1 ? 'reflection' : 'reflections'}
+              <AnimatedNumber value={summary.notesCount}>{summary.notesCount}</AnimatedNumber>{' '}
+              {summary.notesCount === 1 ? 'reflection' : 'reflections'}
             </span>
           </div>
         </section>

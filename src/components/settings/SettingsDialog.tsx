@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   BookOpen,
   Cloud,
@@ -12,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { exportSanctuaryBackupFile } from '../../lib/backupFile';
+import { SPRING_TACTILE, TACTILE_PILL_TAP, TACTILE_TAP } from '../../lib/motion';
 import { getSystemPrefersDark } from '../../lib/theme';
 import { useAppUpdater } from '../../lib/useAppUpdater';
 import { useBibleStore } from '../../store/useBibleStore';
@@ -133,8 +135,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
   return (
     <ModalDialog open={open} onClose={onClose} labelledBy="settings-title" className="max-w-xl">
-      <div className="flex max-h-[92dvh] flex-col sm:max-h-[88dvh]">
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-3.5 sm:px-6 sm:py-4">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 pt-6 pb-3.5 sm:px-6 sm:py-4">
           <div className="min-w-0">
             <h2
               id="settings-title"
@@ -146,17 +148,18 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               Appearance, cloud account sync, streak cadence, and JSON backup.
             </p>
           </div>
-          <button
+          <motion.button
             type="button"
+            whileTap={TACTILE_PILL_TAP}
             onClick={onClose}
             aria-label="Close settings"
             className="inline-flex min-h-10 min-w-10 shrink-0 items-center justify-center rounded-md border border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] sm:min-h-9 sm:min-w-9"
           >
             <X className="h-4 w-4" aria-hidden="true" />
-          </button>
+          </motion.button>
         </div>
 
-        <div className="space-y-5 overflow-y-auto p-4 sm:space-y-6 sm:p-6">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 sm:space-y-6 sm:p-6">
           {/* Cloud Account */}
           {onOpenAccount && (
             <div className="flex flex-col justify-between gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 sm:flex-row sm:flex-wrap sm:items-center">
@@ -201,18 +204,28 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 const Icon = opt.icon;
                 const active = colorScheme === opt.id;
                 return (
-                  <button
+                  <motion.button
                     key={opt.id}
                     type="button"
+                    whileTap={TACTILE_TAP}
+                    transition={SPRING_TACTILE}
                     onClick={() => setColorScheme(opt.id)}
                     aria-pressed={active}
-                    className={`flex min-h-12 flex-row items-center justify-between gap-3 rounded-md border p-3 text-left transition-colors sm:min-h-0 sm:flex-col sm:items-start sm:justify-start sm:gap-0 ${
+                    className={`relative flex min-h-12 flex-row items-center justify-between gap-3 rounded-md border p-3 text-left transition-colors sm:min-h-0 sm:flex-col sm:items-start sm:justify-start sm:gap-0 ${
                       active
-                        ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]'
+                        ? 'border-[var(--color-accent)]'
                         : 'border-[var(--border-subtle)] bg-[var(--bg-canvas)] hover:border-[var(--border-strong)]'
                     }`}
                   >
-                    <div className="flex items-center gap-3 sm:w-full sm:justify-between">
+                    {active && (
+                      <motion.span
+                        layoutId="theme-swatch-pill"
+                        transition={SPRING_TACTILE}
+                        aria-hidden="true"
+                        className="absolute inset-0 rounded-[5px] bg-[var(--color-accent-soft)]"
+                      />
+                    )}
+                    <div className="relative z-10 flex items-center gap-3 sm:w-full sm:justify-between">
                       <Icon
                         className={`h-4 w-4 shrink-0 ${active ? 'text-[var(--color-accent)]' : 'text-[var(--text-secondary)]'}`}
                         aria-hidden="true"
@@ -240,7 +253,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     </div>
                     <span
                       aria-hidden="true"
-                      className="flex h-4 w-7 shrink-0 items-center justify-around rounded-xs border border-black/15 px-0.5 sm:hidden"
+                      className="relative z-10 flex h-4 w-7 shrink-0 items-center justify-around rounded-xs border border-black/15 px-0.5 sm:hidden"
                       style={{ backgroundColor: opt.swatchBg }}
                     >
                       <span
@@ -252,13 +265,13 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                         style={{ backgroundColor: opt.swatchAccent }}
                       />
                     </span>
-                    <span className="mt-2.5 hidden text-sm font-medium text-[var(--text-primary)] sm:block">
+                    <span className="relative z-10 mt-2.5 hidden text-sm font-medium text-[var(--text-primary)] sm:block">
                       {opt.label}
                     </span>
-                    <span className="hidden text-xs text-[var(--text-secondary)] sm:block">
+                    <span className="relative z-10 hidden text-xs text-[var(--text-secondary)] sm:block">
                       {opt.detail}
                     </span>
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
@@ -369,43 +382,57 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
             ) : null}
 
             <div className="pt-2">
-              {!confirmReset ? (
-                <button
-                  type="button"
-                  onClick={() => setConfirmReset(true)}
-                  className="inline-flex min-h-9 items-center gap-1.5 text-xs font-medium text-[var(--color-crimson)] hover:underline"
-                >
-                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>Reset all reading data…</span>
-                </button>
-              ) : (
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--color-crimson)] bg-[var(--bg-surface)] p-3 text-xs">
-                  <span className="font-medium text-[var(--text-primary)]">
-                    Permanently erase all logs and seals?
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setConfirmReset(false)}
-                      className="min-h-9 rounded border border-[var(--border-subtle)] px-3 py-1 font-medium text-[var(--text-secondary)]"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void resetAllData().then(() => {
-                          setConfirmReset(false);
-                          setStatusMsg('All reading data cleared.');
-                        });
-                      }}
-                      className="btn-danger min-h-9 rounded px-3 py-1 font-semibold"
-                    >
-                      Confirm clear
-                    </button>
-                  </div>
-                </div>
-              )}
+              <AnimatePresence mode="wait" initial={false}>
+                {!confirmReset ? (
+                  <motion.button
+                    key="reset-trigger"
+                    type="button"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.14 }}
+                    onClick={() => setConfirmReset(true)}
+                    className="tactile-press inline-flex min-h-9 items-center gap-1.5 text-xs font-medium text-[var(--color-crimson)] hover:underline"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>Reset all reading data…</span>
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    key="reset-confirm"
+                    initial={{ opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={SPRING_TACTILE}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--color-crimson)] bg-[var(--bg-surface)] p-3 text-xs"
+                  >
+                    <span className="font-medium text-[var(--text-primary)]">
+                      Permanently erase all logs and seals?
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setConfirmReset(false)}
+                        className="tactile-press min-h-9 rounded border border-[var(--border-subtle)] px-3 py-1 font-medium text-[var(--text-secondary)]"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void resetAllData().then(() => {
+                            setConfirmReset(false);
+                            setStatusMsg('All reading data cleared.');
+                          });
+                        }}
+                        className="btn-danger tactile-press min-h-9 rounded px-3 py-1 font-semibold"
+                      >
+                        Confirm clear
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 

@@ -17,7 +17,7 @@ export const BookCard: React.FC<BookCardProps> = ({ progress, onSelect }) => {
       type="button"
       onClick={() => onSelect(book.id)}
       aria-label={`${book.name}: ${readChapters} of ${totalChapters} chapters read`}
-      className={`folio-sheet group relative flex flex-col justify-between overflow-hidden p-4 text-left transition-colors ${
+      className={`folio-sheet tactile-press group relative flex flex-col justify-between overflow-hidden p-4 text-left ${
         completed
           ? 'border-[color-mix(in_oklab,var(--color-sage)_50%,var(--border-subtle))]'
           : 'hover:border-[var(--border-strong)]'
@@ -26,7 +26,7 @@ export const BookCard: React.FC<BookCardProps> = ({ progress, onSelect }) => {
       {/* Bookbinding Spine */}
       <span
         aria-hidden="true"
-        className="absolute inset-y-0 left-0 w-1 transition-[width] group-hover:w-1.5"
+        className="absolute inset-y-0 left-0 w-1 transition-[width] duration-150 group-hover:w-1.5 group-active:w-2"
         style={{ backgroundColor: division.colorVar }}
       />
 

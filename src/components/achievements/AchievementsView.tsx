@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
+import { motion } from 'motion/react';
 import { Check, Lock } from 'lucide-react';
 import { formatPlainDate } from '../../lib/dates';
+import { SPRING_TACTILE, TACTILE_PILL_TAP, TACTILE_TAP } from '../../lib/motion';
 import { useBibleStore } from '../../store/useBibleStore';
 import type { AchievementCategory, AchievementStatus, AchievementTier } from '../../types/bible';
 import { MedallionIcon } from './MedallionIcon';
@@ -84,21 +86,33 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
 
         <div className="mt-5 flex flex-col gap-3 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="-mx-3.5 flex flex-nowrap gap-1.5 overflow-x-auto px-3.5 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setCategory(cat.id)}
-                aria-pressed={category === cat.id}
-                className={`min-h-9 shrink-0 whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-medium transition-colors sm:min-h-0 ${
-                  category === cat.id
-                    ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
-                    : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
+            {CATEGORIES.map((cat) => {
+              const isActive = category === cat.id;
+              return (
+                <motion.button
+                  key={cat.id}
+                  type="button"
+                  whileTap={TACTILE_PILL_TAP}
+                  onClick={() => setCategory(cat.id)}
+                  aria-pressed={isActive}
+                  className={`relative min-h-9 shrink-0 whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-medium transition-colors sm:min-h-0 ${
+                    isActive
+                      ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
+                      : 'border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="seal-category-pill"
+                      transition={SPRING_TACTILE}
+                      aria-hidden="true"
+                      className="absolute inset-0 rounded-[5px] bg-[var(--color-accent-soft)]"
+                    />
+                  )}
+                  <span className="relative z-10">{cat.label}</span>
+                </motion.button>
+              );
+            })}
           </div>
 
           <label className="inline-flex min-h-9 cursor-pointer items-center gap-2 self-start text-xs font-medium text-[var(--text-secondary)] sm:min-h-0 sm:self-auto">
@@ -127,9 +141,11 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
           {filtered.map((item) => {
             const isHidden = Boolean(item.definition.secret && !item.unlocked);
             return (
-              <button
+              <motion.button
                 key={item.definition.id}
                 type="button"
+                whileTap={TACTILE_TAP}
+                transition={SPRING_TACTILE}
                 onClick={() => onInspectAchievement(item)}
                 className={`folio-sheet flex items-start gap-4 p-4 text-left transition-colors ${
                   item.unlocked
@@ -192,7 +208,7 @@ export const AchievementsView: React.FC<AchievementsViewProps> = ({
                     </div>
                   )}
                 </div>
-              </button>
+              </motion.button>
             );
           })}
         </div>

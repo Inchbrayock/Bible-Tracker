@@ -1,4 +1,6 @@
 import React from 'react';
+import { motion } from 'motion/react';
+import { SPRING_SEAL } from '../../lib/motion';
 
 interface SanctuaryLampProps {
   active: boolean;
@@ -13,29 +15,46 @@ export const SanctuaryLamp: React.FC<SanctuaryLampProps> = ({ active, size = 38 
       viewBox="0 0 48 48"
       fill="none"
       aria-hidden="true"
-      className="shrink-0"
+      className="shrink-0 overflow-visible"
     >
       {active ? (
-        <>
+        <motion.g
+          key="lit"
+          initial={{ scale: 0.45, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={SPRING_SEAL}
+          style={{ transformOrigin: '24px 21px' }}
+        >
+          {/* Ambient candle halo */}
           <circle
             cx="24"
             cy="14.5"
-            r="10.5"
+            r="12"
             fill="var(--color-lamp)"
-            opacity="0.16"
+            opacity="0.18"
+            className="lamp-halo-anim"
+          />
+          {/* Outer swaying amber flame */}
+          <path
+            d="M24 5.5C24 5.5 29.2 11.6 29.2 16C29.2 19.1 26.9 21.6 24 21.6C21.1 21.6 18.8 19.1 18.8 16C18.8 11.6 24 5.5 24 5.5Z"
+            fill="var(--color-lamp)"
             className="lamp-flame-anim"
           />
+          {/* Inner incandescent wick core */}
           <path
-            d="M24 6C24 6 29 11.8 29 16C29 19 26.8 21.5 24 21.5C21.2 21.5 19 19 19 16C19 11.8 24 6 24 6Z"
-            fill="var(--color-lamp)"
-            className="lamp-flame-anim"
-          />
-          <path
-            d="M24 11.5C24 11.5 26.2 14.3 26.2 16.4C26.2 17.8 25.2 19 24 19C22.8 19 21.8 17.8 21.8 16.4C21.8 14.3 24 11.5 24 11.5Z"
+            d="M24 11.2C24 11.2 26.3 14.2 26.3 16.4C26.3 17.9 25.3 19.1 24 19.1C22.7 19.1 21.7 17.9 21.7 16.4C21.7 14.2 24 11.2 24 11.2Z"
             fill="#FFF7DF"
-            className="lamp-flame-anim"
+            className="lamp-core-anim"
           />
-        </>
+          {/* Subtle rising spark */}
+          <circle
+            cx="24.4"
+            cy="8"
+            r="1"
+            fill="#FFE8A3"
+            className="lamp-ember-anim"
+          />
+        </motion.g>
       ) : (
         <path
           d="M24 17V22.5"

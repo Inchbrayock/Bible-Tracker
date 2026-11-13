@@ -246,6 +246,7 @@
 
   /* Native top-layer modal dialogs (bottom sheet on mobile, centered modal on sm+) */
   dialog:modal {
+    --dialog-max-block: min(90dvh, 60rem);
     overscroll-behavior: contain;
     margin: auto;
     border: 1px solid var(--border-subtle);
@@ -253,32 +254,34 @@
     color: var(--text-primary);
     padding: 0;
     max-inline-size: min(94vw, 48rem);
-    max-block-size: min(90dvh, 52rem);
+    max-block-size: var(--dialog-max-block);
     border-radius: 0.625rem;
     box-shadow: 0 24px 48px -12px rgb(10 15 26 / 0.28);
     opacity: 0;
     transition-property: opacity, transform, display, overlay;
-    transition-duration: 0.2s;
-    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    transition-duration: 0.24s;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
     transition-behavior: allow-discrete;
 
     @media (prefers-reduced-motion: no-preference) {
-      transform: translateY(8px) scale(0.985);
+      transform: translateY(10px) scale(0.975);
     }
 
     @media (max-width: 639px) {
+      --dialog-max-block: calc(92dvh - env(safe-area-inset-top));
       margin: auto 0 0 0;
       inline-size: 100%;
       max-inline-size: 100%;
-      max-block-size: calc(92dvh - env(safe-area-inset-top));
+      max-block-size: var(--dialog-max-block);
       border-bottom: 0;
       border-left: 0;
       border-right: 0;
-      border-radius: 1rem 1rem 0 0;
-      padding-bottom: env(safe-area-inset-bottom);
+      border-radius: 1.125rem 1.125rem 0 0;
+      transition-duration: 0.34s;
 
       @media (prefers-reduced-motion: no-preference) {
-        transform: translateY(24px);
+        opacity: 0.92;
+        transform: translateY(100%);
       }
     }
 
@@ -293,8 +296,8 @@
     background-color: rgb(12 16 24 / 0);
     backdrop-filter: blur(0px);
     transition-property: background-color, backdrop-filter, display, overlay;
-    transition-duration: 0.2s;
-    transition-timing-function: ease-out;
+    transition-duration: 0.28s;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
     transition-behavior: allow-discrete;
 
     @media (prefers-reduced-motion: reduce) {
@@ -313,21 +316,22 @@
       transform: translateY(0) scale(1);
 
       @starting-style {
-        transform: translateY(8px) scale(0.985);
+        transform: translateY(10px) scale(0.975);
       }
 
       @media (max-width: 639px) {
         transform: translateY(0);
 
         @starting-style {
-          transform: translateY(24px);
+          opacity: 0.92;
+          transform: translateY(100%);
         }
       }
     }
 
     &::backdrop {
-      background-color: rgb(12 16 24 / 0.5);
-      backdrop-filter: blur(3px);
+      background-color: rgb(12 16 24 / 0.52);
+      backdrop-filter: blur(4px);
 
       @starting-style {
         background-color: rgb(12 16 24 / 0);
@@ -438,14 +442,62 @@
   color: #0F141D;
 }
 
-@keyframes ember-pulse {
+@keyframes lamp-halo-breathe {
   0%, 100% {
-    transform: scale(1) translateY(0);
-    opacity: 0.92;
+    transform: scale(0.92);
+    opacity: 0.14;
   }
   50% {
-    transform: scale(1.06) translateY(-1px);
+    transform: scale(1.14);
+    opacity: 0.27;
+  }
+}
+
+@keyframes lamp-flame-sway {
+  0%, 100% {
+    transform: scaleX(1) scaleY(1) skewX(0deg) translateY(0);
+    opacity: 0.94;
+  }
+  25% {
+    transform: scaleX(0.95) scaleY(1.08) skewX(-2.6deg) translateY(-0.6px);
     opacity: 1;
+  }
+  55% {
+    transform: scaleX(1.04) scaleY(0.96) skewX(2.1deg) translateY(0.2px);
+    opacity: 0.92;
+  }
+  80% {
+    transform: scaleX(0.97) scaleY(1.05) skewX(-1.3deg) translateY(-0.4px);
+    opacity: 0.98;
+  }
+}
+
+@keyframes lamp-core-flicker {
+  0%, 100% {
+    transform: scale(0.96);
+    opacity: 0.9;
+  }
+  45% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.98);
+    opacity: 0.94;
+  }
+}
+
+@keyframes lamp-ember-rise {
+  0% {
+    transform: translateY(1px) scale(0.5);
+    opacity: 0;
+  }
+  22% {
+    opacity: 0.88;
+  }
+  100% {
+    transform: translateY(-9px) translateX(1.5px) scale(0.15);
+    opacity: 0;
   }
 }
 
@@ -458,16 +510,105 @@
   }
 }
 
-.lamp-flame-anim {
-  transform-origin: center bottom;
+@keyframes halo-spin-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes sheen-sweep {
+  0% {
+    transform: translateX(-140%) skewX(-20deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.55;
+  }
+  80% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translateX(260%) skewX(-20deg);
+    opacity: 0;
+  }
+}
+
+@keyframes chapter-ink-ripple {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.55);
+    opacity: 0;
+  }
+}
+
+.tactile-press {
+  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    opacity 0.16s ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tactile-press:active {
+    transform: scale(0.965);
+  }
+}
+
+.lamp-halo-anim {
+  transform-origin: 24px 15px;
   @media (prefers-reduced-motion: no-preference) {
-    animation: ember-pulse 2.8s ease-in-out infinite;
+    animation: lamp-halo-breathe 3.1s ease-in-out infinite;
+  }
+}
+
+.lamp-flame-anim {
+  transform-origin: 24px 21.5px;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: lamp-flame-sway 2.9s ease-in-out infinite;
+  }
+}
+
+.lamp-core-anim {
+  transform-origin: 24px 19px;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: lamp-core-flicker 1.9s ease-in-out infinite;
+  }
+}
+
+.lamp-ember-anim {
+  transform-origin: center;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: lamp-ember-rise 2.6s ease-out infinite;
   }
 }
 
 .halo-spin-anim {
   @media (prefers-reduced-motion: no-preference) {
-    animation: halo-spin 24s linear infinite;
+    animation: halo-spin 26s linear infinite;
+  }
+}
+
+.halo-spin-reverse-anim {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: halo-spin-reverse 38s linear infinite;
+  }
+}
+
+.sheen-sweep-anim {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: sheen-sweep 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+}
+
+.chapter-ripple-anim {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: chapter-ink-ripple 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 }
 

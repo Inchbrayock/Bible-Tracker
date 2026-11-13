@@ -35,7 +35,7 @@ export const WholeBibleMosaic: React.FC<WholeBibleMosaicProps> = ({ onSelectBook
               onClick={() => onSelectBook(book.id)}
               onMouseLeave={() => setHovered(null)}
               aria-label={`Open ${book.name}: ${readCountTotal} of ${book.chapterCount} chapters read`}
-              className="group rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 text-left transition-colors hover:border-[var(--border-strong)]"
+              className="tactile-press group rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] p-3.5 text-left hover:border-[var(--border-strong)]"
             >
               <div className="mb-2 flex items-baseline justify-between gap-2">
                 <span className="font-display text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--color-accent)]">

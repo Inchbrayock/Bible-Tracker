@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Check, CheckCircle2, Compass } from 'lucide-react';
 import { BIBLE_BOOKS, DIVISION_META_BY_ID } from '../../data/bibleCanon';
 import { todayPlainDate } from '../../lib/dates';
+import { SPRING_PROGRESS, SPRING_SEAL, SPRING_TACTILE, TACTILE_TAP } from '../../lib/motion';
 import {
   computePlanProgress,
   getActiveReadingPlan,
@@ -75,7 +77,7 @@ export const ContinueReadingCard: React.FC<ContinueReadingCardProps> = ({
           <button
             type="button"
             onClick={onBrowseLibrary}
-            className="inline-flex min-h-9 items-center text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
+            className="tactile-press inline-flex min-h-9 items-center text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
           >
             Browse 66 books
           </button>
@@ -95,8 +97,10 @@ export const ContinueReadingCard: React.FC<ContinueReadingCardProps> = ({
               const divMeta = DIVISION_META_BY_ID[bp.book.division];
               return (
                 <li key={bp.book.id}>
-                  <button
+                  <motion.button
                     type="button"
+                    whileTap={TACTILE_TAP}
+                    transition={SPRING_TACTILE}
                     onClick={() => onOpenBook(bp.book.id)}
                     className="flex w-full items-center gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-2.5 text-left transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--bg-surface)]"
                   >
@@ -116,10 +120,12 @@ export const ContinueReadingCard: React.FC<ContinueReadingCardProps> = ({
                       </div>
                       <div className="mt-1.5 flex items-center gap-2.5">
                         <div className="h-1 flex-1 overflow-hidden rounded-full bg-[var(--bg-subtle)]">
-                          <div
-                            className="h-full rounded-full transition-[width] duration-300"
+                          <motion.div
+                            className="h-full rounded-full"
+                            initial={false}
+                            animate={{ width: `${bp.percentage}%` }}
+                            transition={SPRING_PROGRESS}
                             style={{
-                              width: `${bp.percentage}%`,
                               backgroundColor: divMeta.colorVar,
                             }}
                           />
@@ -131,7 +137,7 @@ export const ContinueReadingCard: React.FC<ContinueReadingCardProps> = ({
                         )}
                       </div>
                     </div>
-                  </button>
+                  </motion.button>
                 </li>
               );
             })}
@@ -155,7 +161,7 @@ export const ContinueReadingCard: React.FC<ContinueReadingCardProps> = ({
             <button
               type="button"
               onClick={onOpenPlans}
-              className="inline-flex min-h-8 items-center text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
+              className="tactile-press inline-flex min-h-8 items-center text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
             >
               All plans
             </button>
@@ -163,10 +169,12 @@ export const ContinueReadingCard: React.FC<ContinueReadingCardProps> = ({
         </div>
 
         <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
-          <div
-            className="h-full rounded-full transition-[width] duration-300"
+          <motion.div
+            className="h-full rounded-full"
+            initial={false}
+            animate={{ width: `${planProgress.percentage}%` }}
+            transition={SPRING_PROGRESS}
             style={{
-              width: `${planProgress.percentage}%`,
               backgroundColor: activePlan.accentColor,
             }}
           />
@@ -182,20 +190,34 @@ export const ContinueReadingCard: React.FC<ContinueReadingCardProps> = ({
                 {planProgress.nextDay.title}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => void handleLogNextPlanDay()}
-              className="btn-primary inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-1.5 rounded-md px-3.5 py-2 text-xs font-medium transition-opacity hover:opacity-90 sm:min-h-9 sm:w-auto sm:py-1.5"
-            >
-              {justLoggedPlanDay === planProgress.nextDay.day ? (
-                <>
-                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>Logged</span>
-                </>
-              ) : (
+            <div className="relative w-full shrink-0 sm:w-auto">
+              <AnimatePresence>
+                {justLoggedPlanDay !== null ? (
+                  <motion.span
+                    key={justLoggedPlanDay}
+                    aria-hidden="true"
+                    initial={{ opacity: 0, y: 4, scale: 0.86 }}
+                    animate={{ opacity: 1, y: -22, scale: 1 }}
+                    exit={{ opacity: 0, y: -32, scale: 0.94 }}
+                    transition={SPRING_SEAL}
+                    className="pointer-events-none absolute right-2 top-0 z-10 inline-flex items-center gap-1 rounded-full border border-[var(--color-sage)] bg-[var(--color-sage-soft)] px-2.5 py-0.5 text-[0.7rem] font-semibold text-[var(--color-sage)] shadow-xs"
+                  >
+                    <Check className="h-3 w-3" aria-hidden="true" />
+                    Day {justLoggedPlanDay} logged
+                  </motion.span>
+                ) : null}
+              </AnimatePresence>
+
+              <motion.button
+                type="button"
+                whileTap={TACTILE_TAP}
+                transition={SPRING_TACTILE}
+                onClick={() => void handleLogNextPlanDay()}
+                className="btn-primary inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-md px-3.5 py-2 text-xs font-medium transition-opacity hover:opacity-90 sm:min-h-9 sm:w-auto sm:py-1.5"
+              >
                 <span>Log Day {planProgress.nextDay.day}</span>
-              )}
-            </button>
+              </motion.button>
+            </div>
           </div>
         ) : (
           <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-3">
@@ -206,7 +228,7 @@ export const ContinueReadingCard: React.FC<ContinueReadingCardProps> = ({
             <button
               type="button"
               onClick={onOpenPlans}
-              className="text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
+              className="tactile-press text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
             >
               Choose another plan
             </button>
