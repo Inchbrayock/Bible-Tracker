@@ -8,16 +8,22 @@ import React, {
   useState,
 } from 'react';
 import { BOOKS_BY_ID } from '../data/bibleCanon';
+import { CORE_DEFAULT_PLAN_IDS } from '../data/readingPlans';
 import {
+  batchSyncCustomPlans,
   batchSyncReadingLogs,
+  deleteCloudCustomPlan,
   deleteCloudReadingLog,
   ensureCloudUserDoc,
+  fetchCloudCustomPlans,
   fetchCloudLogs,
+  replaceCloudCustomPlans,
   replaceCloudLogs,
   saveCloudColorScheme,
   saveCloudDisplayName,
   saveCloudPreferences,
   subscribeCloudSanctuary,
+  upsertCloudCustomPlan,
   upsertCloudReadingLog,
 } from '../db/cloudSync';
 import {
@@ -25,16 +31,20 @@ import {
   buildBackupPayload,
   clearAllSanctuaryData,
   DEFAULT_PREFERENCES,
+  deleteCustomPlan,
   deleteReadingLog,
   getLocalOwnerUid,
   loadSanctuaryState,
+  normalizeUserPreferences,
   parseAndValidateBackup,
   persistPreferences,
   removeChaptersFromBookLogs,
+  replaceAllCustomPlans,
   replaceAllLogs,
   seedDemoSanctuary,
   setLocalOwnerUid,
   updateReadingLog,
+  upsertCustomPlan,
 } from '../db/repository';
 import { evaluateAchievements } from '../lib/achievementsEngine';
 import {
@@ -50,8 +60,20 @@ import {
   type AccountUser,
 } from '../lib/auth';
 import { celebrateAchievementUnlocked, celebrateBookCompleted } from '../lib/celebration';
+import {
+  computeSectionsChapterCount,
+  createCustomPlanId,
+  materializeCustomPlan,
+  sanitizeCustomPlanSections,
+  sanitizePlanAccentColor,
+} from '../lib/customPlans';
 import { todayPlainDate } from '../lib/dates';
 import { syncNativeStatusBar, triggerNativeHaptic } from '../lib/nativeShell';
+import {
+  getAllReadingPlans,
+  getReadingPlanById,
+  sanitizeShelfPlanIds,
+} from '../lib/plans';
 import { computeBibleProgress, formatChapterRanges } from '../lib/progress';
 import {
   applyColorScheme,
@@ -63,7 +85,10 @@ import type {
   AchievementStatus,
   BibleProgressSummary,
   ColorSchemePreference,
+  CustomPlanDefinition,
+  CustomPlanSection,
   ReadingLogEntry,
+  ReadingPlan,
   UserPreferences,
 } from '../types/bible';
 
@@ -72,13 +97,26 @@ export type CloudSyncStatus = 'local' | 'syncing' | 'synced' | 'offline' | 'erro
 export interface PendingGuestMerge {
   guestLogs: ReadingLogEntry[];
   guestPreferences: UserPreferences;
+  guestCustomPlans: CustomPlanDefinition[];
   cloudLogsCount: number;
+}
+
+export interface SaveCustomPlanInput {
+  id?: string;
+  title: string;
+  description?: string;
+  sections: CustomPlanSection[];
+  durationDays: number;
+  accentColor?: string;
 }
 
 interface BibleStoreValue {
   ready: boolean;
   logs: ReadingLogEntry[];
   preferences: UserPreferences;
+  customPlans: CustomPlanDefinition[];
+  customReadingPlans: ReadingPlan[];
+  allPlans: ReadingPlan[];
   colorScheme: ColorSchemePreference;
   summary: BibleProgressSummary;
   achievements: AchievementStatus[];
@@ -93,6 +131,14 @@ interface BibleStoreValue {
   pendingMerge: PendingGuestMerge | null;
   setColorScheme: (pref: ColorSchemePreference) => void;
   updatePreferences: (patch: Partial<UserPreferences>) => Promise<void>;
+  activateReadingPlan: (planId: string) => Promise<void>;
+  removePlanFromShelf: (planId: string) => Promise<void>;
+  restoreDefaultShelfPlans: () => Promise<void>;
+  saveCustomPlan: (
+    input: SaveCustomPlanInput,
+    options?: { activate?: boolean }
+  ) => Promise<ReadingPlan>;
+  removeCustomPlan: (id: string) => Promise<void>;
   logChapters: (input: {
     bookId: string;
     chapters: number[];
@@ -139,13 +185,29 @@ function normalizeLogsSignature(list: ReadingLogEntry[]): string {
     .join('\n');
 }
 
+function normalizeCustomPlansSignature(list: CustomPlanDefinition[]): string {
+  return [...list]
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map(
+      (p) =>
+        `${p.id}|${p.title}|${p.description}|${p.durationDays}|${p.accentColor}|${p.updatedAt}|${p.sections
+          .map((s) => `${s.bookId}:${s.startChapter ?? ''}-${s.endChapter ?? ''}`)
+          .join(',')}`
+    )
+    .join('\n');
+}
+
 function arePreferencesEqual(a: UserPreferences, b: UserPreferences): boolean {
+  const shelfA = a.shelfPlanIds ?? [];
+  const shelfB = b.shelfPlanIds ?? [];
   return (
     a.streakGraceEnabled === b.streakGraceEnabled &&
     a.celebrationsEnabled === b.celebrationsEnabled &&
     a.activePlanId === b.activePlanId &&
     a.seenAchievementIds.length === b.seenAchievementIds.length &&
-    a.seenAchievementIds.every((id, idx) => id === b.seenAchievementIds[idx])
+    a.seenAchievementIds.every((id, idx) => id === b.seenAchievementIds[idx]) &&
+    shelfA.length === shelfB.length &&
+    shelfA.every((id, idx) => id === shelfB[idx])
   );
 }
 
@@ -192,6 +254,7 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [ready, setReady] = useState(false);
   const [logs, setLogs] = useState<ReadingLogEntry[]>([]);
   const [preferences, setPreferences] = useState<UserPreferences>({ ...DEFAULT_PREFERENCES });
+  const [customPlans, setCustomPlans] = useState<CustomPlanDefinition[]>([]);
   const [colorScheme, setColorSchemeState] = useState<ColorSchemePreference>(() =>
     getStoredColorScheme()
   );
@@ -210,6 +273,8 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   logsRef.current = logs;
   const prefsRef = useRef<UserPreferences>(preferences);
   prefsRef.current = preferences;
+  const customPlansRef = useRef<CustomPlanDefinition[]>(customPlans);
+  customPlansRef.current = customPlans;
   const colorSchemeRef = useRef<ColorSchemePreference>(colorScheme);
   colorSchemeRef.current = colorScheme;
   const userRef = useRef<AccountUser | null>(user);
@@ -218,10 +283,17 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const authSessionTokenRef = useRef(0);
   const cloudUnsubRef = useRef<(() => void) | null>(null);
   const pendingWritesRef = useRef(0);
+  const pendingPrefsWritesRef = useRef(0);
+  const pendingLogWritesRef = useRef(0);
+  const pendingCustomPlanWritesRef = useRef(0);
   const initialLocalLoadPromiseRef = useRef<Promise<void> | null>(null);
 
   const hydrateSilently = useCallback(
-    (nextLogs: ReadingLogEntry[], nextPrefs: UserPreferences) => {
+    (
+      nextLogs: ReadingLogEntry[],
+      nextPrefs: UserPreferences,
+      nextCustomPlans?: CustomPlanDefinition[]
+    ) => {
       const nextSummary = computeBibleProgress(nextLogs, {
         streakGraceEnabled: nextPrefs.streakGraceEnabled,
       });
@@ -233,33 +305,57 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       prefsRef.current = nextPrefs;
       setLogs(nextLogs);
       setPreferences(nextPrefs);
+      if (nextCustomPlans !== undefined) {
+        customPlansRef.current = nextCustomPlans;
+        setCustomPlans(nextCustomPlans);
+      }
       setUnlockedQueue([]);
     },
     []
   );
 
-  const runCloudWrite = useCallback((op: () => Promise<void>) => {
-    if (!userRef.current) return;
-    pendingWritesRef.current += 1;
-    setSyncStatus(typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'syncing');
-    setSyncError(null);
+  const runCloudWrite = useCallback(
+    (op: () => Promise<void>, channel: 'preferences' | 'logs' | 'customPlans' | 'all' = 'all') => {
+      if (!userRef.current) return;
+      pendingWritesRef.current += 1;
+      if (channel === 'preferences' || channel === 'all') pendingPrefsWritesRef.current += 1;
+      if (channel === 'logs' || channel === 'all') pendingLogWritesRef.current += 1;
+      if (channel === 'customPlans' || channel === 'all') pendingCustomPlanWritesRef.current += 1;
 
-    void op()
-      .then(() => {
+      const releasePending = () => {
         pendingWritesRef.current = Math.max(0, pendingWritesRef.current - 1);
-        if (pendingWritesRef.current === 0 && userRef.current) {
-          setSyncStatus('synced');
-          setLastSyncedAt(new Date().toISOString());
+        if (channel === 'preferences' || channel === 'all') {
+          pendingPrefsWritesRef.current = Math.max(0, pendingPrefsWritesRef.current - 1);
         }
-      })
-      .catch((err) => {
-        pendingWritesRef.current = Math.max(0, pendingWritesRef.current - 1);
-        if (!userRef.current) return;
-        const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
-        setSyncStatus(offline ? 'offline' : 'error');
-        setSyncError(formatCloudError(err));
-      });
-  }, []);
+        if (channel === 'logs' || channel === 'all') {
+          pendingLogWritesRef.current = Math.max(0, pendingLogWritesRef.current - 1);
+        }
+        if (channel === 'customPlans' || channel === 'all') {
+          pendingCustomPlanWritesRef.current = Math.max(0, pendingCustomPlanWritesRef.current - 1);
+        }
+      };
+
+      setSyncStatus(typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'syncing');
+      setSyncError(null);
+
+      void op()
+        .then(() => {
+          releasePending();
+          if (pendingWritesRef.current === 0 && userRef.current) {
+            setSyncStatus('synced');
+            setLastSyncedAt(new Date().toISOString());
+          }
+        })
+        .catch((err) => {
+          releasePending();
+          if (!userRef.current) return;
+          const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+          setSyncStatus(offline ? 'offline' : 'error');
+          setSyncError(formatCloudError(err));
+        });
+    },
+    []
+  );
 
   useEffect(() => {
     void syncNativeStatusBar(getResolvedColorScheme(colorScheme));
@@ -297,7 +393,7 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     let active = true;
     const loadPromise = loadSanctuaryState().then(
-      ({ logs: loadedLogs, preferences: loadedPrefs }) => {
+      ({ logs: loadedLogs, preferences: loadedPrefs, customPlans: loadedCustomPlans }) => {
         if (!active) return;
         const initialSummary = computeBibleProgress(loadedLogs, {
           streakGraceEnabled: loadedPrefs.streakGraceEnabled,
@@ -309,8 +405,10 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         prevUnlockedSetRef.current = alreadyUnlocked;
         logsRef.current = loadedLogs;
         prefsRef.current = loadedPrefs;
+        customPlansRef.current = loadedCustomPlans;
         setLogs(loadedLogs);
         setPreferences(loadedPrefs);
+        setCustomPlans(loadedCustomPlans);
         setReady(true);
       }
     );
@@ -326,12 +424,15 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       cloudUnsubRef.current = subscribeCloudSanctuary(uid, {
         onUserDoc: (docState, fromCache) => {
           if (authSessionTokenRef.current !== sessionToken) return;
-          if (!arePreferencesEqual(prefsRef.current, docState.preferences)) {
+          if (
+            pendingPrefsWritesRef.current === 0 &&
+            !arePreferencesEqual(prefsRef.current, docState.preferences)
+          ) {
             prefsRef.current = docState.preferences;
             setPreferences(docState.preferences);
             void persistPreferences(docState.preferences);
           }
-          if (docState.colorScheme !== colorSchemeRef.current) {
+          if (pendingPrefsWritesRef.current === 0 && docState.colorScheme !== colorSchemeRef.current) {
             applyColorScheme(docState.colorScheme);
             setColorSchemeState(docState.colorScheme);
           }
@@ -348,11 +449,27 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         onLogs: (nextCloudLogs, fromCache) => {
           if (authSessionTokenRef.current !== sessionToken) return;
           if (
-            normalizeLogsSignature(logsRef.current) !==
-            normalizeLogsSignature(nextCloudLogs)
+            pendingLogWritesRef.current === 0 &&
+            normalizeLogsSignature(logsRef.current) !== normalizeLogsSignature(nextCloudLogs)
           ) {
             hydrateSilently(nextCloudLogs, prefsRef.current);
             void replaceAllLogs(nextCloudLogs);
+          }
+          if (pendingWritesRef.current === 0) {
+            setSyncStatus(fromCache ? 'offline' : 'synced');
+            if (!fromCache) setLastSyncedAt(new Date().toISOString());
+          }
+        },
+        onCustomPlans: (nextCloudPlans, fromCache) => {
+          if (authSessionTokenRef.current !== sessionToken) return;
+          if (
+            pendingCustomPlanWritesRef.current === 0 &&
+            normalizeCustomPlansSignature(customPlansRef.current) !==
+              normalizeCustomPlansSignature(nextCloudPlans)
+          ) {
+            customPlansRef.current = nextCloudPlans;
+            setCustomPlans(nextCloudPlans);
+            void replaceAllCustomPlans(nextCloudPlans);
           }
           if (pendingWritesRef.current === 0) {
             setSyncStatus(fromCache ? 'offline' : 'synced');
@@ -387,6 +504,10 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (!nextUser) {
           cloudUnsubRef.current?.();
           cloudUnsubRef.current = null;
+          pendingWritesRef.current = 0;
+          pendingPrefsWritesRef.current = 0;
+          pendingLogWritesRef.current = 0;
+          pendingCustomPlanWritesRef.current = 0;
           const hadCloudOwner = Boolean(getLocalOwnerUid() || userRef.current);
           setUser(null);
           userRef.current = null;
@@ -400,7 +521,7 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             setLocalOwnerUid(null);
             await clearAllSanctuaryData();
             if (authSessionTokenRef.current !== sessionToken) return;
-            hydrateSilently([], { ...DEFAULT_PREFERENCES });
+            hydrateSilently([], { ...DEFAULT_PREFERENCES }, []);
           }
           return;
         }
@@ -414,23 +535,32 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         try {
           const localLogs = logsRef.current;
           const localPrefs = prefsRef.current;
+          const localCustomPlans = customPlansRef.current;
           const localScheme = colorSchemeRef.current;
           const prevOwnerUid = getLocalOwnerUid();
 
-          const cloudUser = await ensureCloudUserDoc(nextUser, {
-            preferences: localPrefs,
-            colorScheme: localScheme,
-          });
-          const cloudLogs = await fetchCloudLogs(nextUser.uid);
+          const [cloudUser, cloudLogs, cloudCustomPlans] = await Promise.all([
+            ensureCloudUserDoc(nextUser, {
+              preferences: localPrefs,
+              colorScheme: localScheme,
+            }),
+            fetchCloudLogs(nextUser.uid),
+            fetchCloudCustomPlans(nextUser.uid),
+          ]);
 
           if (authSessionTokenRef.current !== sessionToken) return;
 
-          const hasUnsyncedGuestData = !prevOwnerUid && localLogs.length > 0;
+          const hasUnsyncedGuestData =
+            !prevOwnerUid && (localLogs.length > 0 || localCustomPlans.length > 0);
+          const cloudIsEmpty = cloudLogs.length === 0 && cloudCustomPlans.length === 0;
 
-          if (hasUnsyncedGuestData && cloudLogs.length === 0) {
-            await batchSyncReadingLogs(nextUser.uid, localLogs, []);
-            await saveCloudPreferences(nextUser.uid, localPrefs);
-            await saveCloudColorScheme(nextUser.uid, localScheme);
+          if (hasUnsyncedGuestData && cloudIsEmpty) {
+            await Promise.all([
+              batchSyncReadingLogs(nextUser.uid, localLogs, []),
+              batchSyncCustomPlans(nextUser.uid, localCustomPlans, []),
+              saveCloudPreferences(nextUser.uid, localPrefs),
+              saveCloudColorScheme(nextUser.uid, localScheme),
+            ]);
             if (authSessionTokenRef.current !== sessionToken) return;
             setLocalOwnerUid(nextUser.uid);
             setPendingMerge(null);
@@ -439,15 +569,19 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             setAnnouncement(
               `Signed in and saved ${localLogs.length} reading ${localLogs.length === 1 ? 'entry' : 'entries'} to your account.`
             );
-          } else if (hasUnsyncedGuestData && cloudLogs.length > 0) {
+          } else if (hasUnsyncedGuestData && !cloudIsEmpty) {
             setPendingMerge({
               guestLogs: localLogs,
               guestPreferences: localPrefs,
+              guestCustomPlans: localCustomPlans,
               cloudLogsCount: cloudLogs.length,
             });
-            hydrateSilently(cloudLogs, cloudUser.preferences);
-            await replaceAllLogs(cloudLogs);
-            await persistPreferences(cloudUser.preferences);
+            hydrateSilently(cloudLogs, cloudUser.preferences, cloudCustomPlans);
+            await Promise.all([
+              replaceAllLogs(cloudLogs),
+              persistPreferences(cloudUser.preferences),
+              replaceAllCustomPlans(cloudCustomPlans),
+            ]);
             if (cloudUser.existed && cloudUser.colorScheme !== localScheme) {
               applyColorScheme(cloudUser.colorScheme);
               setColorSchemeState(cloudUser.colorScheme);
@@ -459,11 +593,16 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             setPendingMerge(null);
             if (
               normalizeLogsSignature(localLogs) !== normalizeLogsSignature(cloudLogs) ||
-              !arePreferencesEqual(localPrefs, cloudUser.preferences)
+              !arePreferencesEqual(localPrefs, cloudUser.preferences) ||
+              normalizeCustomPlansSignature(localCustomPlans) !==
+                normalizeCustomPlansSignature(cloudCustomPlans)
             ) {
-              hydrateSilently(cloudLogs, cloudUser.preferences);
-              await replaceAllLogs(cloudLogs);
-              await persistPreferences(cloudUser.preferences);
+              hydrateSilently(cloudLogs, cloudUser.preferences, cloudCustomPlans);
+              await Promise.all([
+                replaceAllLogs(cloudLogs),
+                persistPreferences(cloudUser.preferences),
+                replaceAllCustomPlans(cloudCustomPlans),
+              ]);
             }
             if (cloudUser.existed && cloudUser.colorScheme !== localScheme) {
               applyColorScheme(cloudUser.colorScheme);
@@ -546,7 +685,7 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setColorSchemeState(pref);
       const uid = userRef.current?.uid;
       if (uid) {
-        runCloudWrite(() => saveCloudColorScheme(uid, pref));
+        runCloudWrite(() => saveCloudColorScheme(uid, pref), 'preferences');
       }
     },
     [runCloudWrite]
@@ -554,16 +693,178 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const updatePreferences = useCallback(
     async (patch: Partial<UserPreferences>) => {
-      const next = { ...prefsRef.current, ...patch };
+      const next = normalizeUserPreferences({ ...prefsRef.current, ...patch });
       prefsRef.current = next;
       setPreferences(next);
       await persistPreferences(next);
       const uid = userRef.current?.uid;
       if (uid) {
-        runCloudWrite(() => saveCloudPreferences(uid, next));
+        runCloudWrite(() => saveCloudPreferences(uid, next), 'preferences');
       }
     },
     [runCloudWrite]
+  );
+
+  const activateReadingPlan = useCallback(
+    async (planId: string) => {
+      const currentShelf = sanitizeShelfPlanIds(prefsRef.current.shelfPlanIds);
+      const nextShelf = currentShelf.includes(planId)
+        ? currentShelf
+        : [...currentShelf, planId].slice(0, 100);
+      await updatePreferences({
+        activePlanId: planId,
+        shelfPlanIds: nextShelf,
+      });
+    },
+    [updatePreferences]
+  );
+
+  const removePlanFromShelf = useCallback(
+    async (planId: string) => {
+      const currentShelf = sanitizeShelfPlanIds(prefsRef.current.shelfPlanIds);
+      if (!currentShelf.includes(planId)) return;
+      const nextShelf = currentShelf.filter((id) => id !== planId);
+      const nextActive =
+        prefsRef.current.activePlanId === planId
+          ? (nextShelf[0] ?? null)
+          : prefsRef.current.activePlanId;
+      const removedPlan = getReadingPlanById(
+        planId,
+        customPlansRef.current.map((def) => materializeCustomPlan(def))
+      );
+      await updatePreferences({
+        shelfPlanIds: nextShelf,
+        activePlanId: nextActive,
+      });
+      if (removedPlan) {
+        setAnnouncement(`Removed ${removedPlan.title} from your plans shelf.`);
+      }
+    },
+    [updatePreferences]
+  );
+
+  const restoreDefaultShelfPlans = useCallback(async () => {
+    const currentShelf = sanitizeShelfPlanIds(prefsRef.current.shelfPlanIds);
+    const nextShelf = sanitizeShelfPlanIds([...currentShelf, ...CORE_DEFAULT_PLAN_IDS]);
+    const nextActive =
+      prefsRef.current.activePlanId && nextShelf.includes(prefsRef.current.activePlanId)
+        ? prefsRef.current.activePlanId
+        : CORE_DEFAULT_PLAN_IDS[0];
+    await updatePreferences({
+      shelfPlanIds: nextShelf,
+      activePlanId: nextActive,
+    });
+    setAnnouncement('Restored the 4 starter reading plans to your shelf.');
+  }, [updatePreferences]);
+
+  const customReadingPlans = useMemo(
+    () => customPlans.map((def) => materializeCustomPlan(def)),
+    [customPlans]
+  );
+
+  const allPlans = useMemo(
+    () => getAllReadingPlans(customReadingPlans),
+    [customReadingPlans]
+  );
+
+  const saveCustomPlan = useCallback(
+    async (
+      input: SaveCustomPlanInput,
+      options?: { activate?: boolean }
+    ): Promise<ReadingPlan> => {
+      const cleanTitle = input.title.trim().slice(0, 80);
+      if (!cleanTitle) {
+        throw new Error('Enter a title for your custom reading plan.');
+      }
+      const sections = sanitizeCustomPlanSections(input.sections);
+      const totalChapters = computeSectionsChapterCount(sections);
+      if (sections.length === 0 || totalChapters === 0) {
+        throw new Error('Choose at least one Bible book or chapter range.');
+      }
+
+      const safeDuration = Math.max(
+        1,
+        Math.min(totalChapters, Math.round(input.durationDays) || 1)
+      );
+      const nowIso = new Date().toISOString();
+      const existing = input.id
+        ? customPlansRef.current.find((p) => p.id === input.id)
+        : undefined;
+
+      const definition: CustomPlanDefinition = {
+        id: existing ? existing.id : createCustomPlanId(cleanTitle),
+        title: cleanTitle,
+        description: (input.description ?? '').trim().slice(0, 280),
+        sections,
+        durationDays: safeDuration,
+        accentColor: sanitizePlanAccentColor(input.accentColor),
+        createdAt: existing ? existing.createdAt : nowIso,
+        updatedAt: nowIso,
+      };
+
+      await upsertCustomPlan(definition);
+      const nextList = existing
+        ? customPlansRef.current.map((p) => (p.id === definition.id ? definition : p))
+        : [definition, ...customPlansRef.current];
+      customPlansRef.current = nextList;
+      setCustomPlans(nextList);
+
+      const materialized = materializeCustomPlan(definition);
+      const uid = userRef.current?.uid;
+      if (uid) {
+        runCloudWrite(() => upsertCloudCustomPlan(uid, definition), 'customPlans');
+      }
+
+      const currentShelf = sanitizeShelfPlanIds(prefsRef.current.shelfPlanIds);
+      const needsShelfAdd = !currentShelf.includes(definition.id) && (!existing || options?.activate);
+      if (options?.activate || needsShelfAdd) {
+        const nextShelf = currentShelf.includes(definition.id)
+          ? currentShelf
+          : [...currentShelf, definition.id].slice(0, 100);
+        await updatePreferences({
+          ...(nextShelf !== currentShelf ? { shelfPlanIds: nextShelf } : {}),
+          ...(options?.activate ? { activePlanId: definition.id } : {}),
+        });
+      }
+
+      setAnnouncement(
+        existing
+          ? `Updated custom reading plan ${definition.title}.`
+          : `Created custom reading plan ${definition.title}.`
+      );
+      return materialized;
+    },
+    [runCloudWrite, updatePreferences]
+  );
+
+  const removeCustomPlan = useCallback(
+    async (id: string) => {
+      const target = customPlansRef.current.find((p) => p.id === id);
+      if (!target) return;
+
+      await deleteCustomPlan(id);
+      const nextList = customPlansRef.current.filter((p) => p.id !== id);
+      customPlansRef.current = nextList;
+      setCustomPlans(nextList);
+
+      const currentShelf = sanitizeShelfPlanIds(prefsRef.current.shelfPlanIds);
+      const nextShelf = currentShelf.filter((sid) => sid !== id);
+      const activeChanged = prefsRef.current.activePlanId === id;
+      if (activeChanged || nextShelf.length !== currentShelf.length) {
+        await updatePreferences({
+          shelfPlanIds: nextShelf,
+          ...(activeChanged ? { activePlanId: nextShelf[0] ?? null } : {}),
+        });
+      }
+
+      const uid = userRef.current?.uid;
+      if (uid) {
+        runCloudWrite(() => deleteCloudCustomPlan(uid, id), 'customPlans');
+      }
+
+      setAnnouncement(`Deleted custom reading plan ${target.title}.`);
+    },
+    [runCloudWrite, updatePreferences]
   );
 
   const logChapters = useCallback(
@@ -601,7 +902,7 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       const uid = userRef.current?.uid;
       if (uid) {
-        runCloudWrite(() => upsertCloudReadingLog(uid, entry));
+        runCloudWrite(() => upsertCloudReadingLog(uid, entry), 'logs');
       }
     },
     [runCloudWrite]
@@ -638,7 +939,7 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (uid) {
           const { upserts, deleteIds } = diffLogsForSync(prevLogs, nextLogs);
           if (upserts.length > 0 || deleteIds.length > 0) {
-            runCloudWrite(() => batchSyncReadingLogs(uid, upserts, deleteIds));
+            runCloudWrite(() => batchSyncReadingLogs(uid, upserts, deleteIds), 'logs');
           }
         }
       }
@@ -716,7 +1017,7 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const uid = userRef.current?.uid;
       if (uid && updatedEntry) {
         const entryToSync = updatedEntry;
-        runCloudWrite(() => upsertCloudReadingLog(uid, entryToSync));
+        runCloudWrite(() => upsertCloudReadingLog(uid, entryToSync), 'logs');
       }
     },
     [runCloudWrite]
@@ -732,7 +1033,7 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       const uid = userRef.current?.uid;
       if (uid) {
-        runCloudWrite(() => deleteCloudReadingLog(uid, id));
+        runCloudWrite(() => deleteCloudReadingLog(uid, id), 'logs');
       }
     },
     [runCloudWrite]
@@ -743,23 +1044,35 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, []);
 
   const exportBackupJson = useCallback(() => {
-    return JSON.stringify(buildBackupPayload(logs, prefsRef.current), null, 2);
+    return JSON.stringify(
+      buildBackupPayload(logs, prefsRef.current, customPlansRef.current),
+      null,
+      2
+    );
   }, [logs]);
 
   const importBackupJson = useCallback(
     async (raw: string) => {
       const parsed = parseAndValidateBackup(raw);
-      const prevIds = logsRef.current.map((l) => l.id);
-      await replaceAllLogs(parsed.logs);
-      await persistPreferences(parsed.preferences);
-      hydrateSilently(parsed.logs, parsed.preferences);
+      const prevLogIds = logsRef.current.map((l) => l.id);
+      const prevPlanIds = customPlansRef.current.map((p) => p.id);
+      const nextCustomPlans = parsed.customPlans ?? [];
+      await Promise.all([
+        replaceAllLogs(parsed.logs),
+        persistPreferences(parsed.preferences),
+        replaceAllCustomPlans(nextCustomPlans),
+      ]);
+      hydrateSilently(parsed.logs, parsed.preferences, nextCustomPlans);
       setAnnouncement(`Imported ${parsed.logs.length} reading log entries.`);
 
       const uid = userRef.current?.uid;
       if (uid) {
         runCloudWrite(async () => {
-          await replaceCloudLogs(uid, parsed.logs, prevIds);
-          await saveCloudPreferences(uid, parsed.preferences);
+          await Promise.all([
+            replaceCloudLogs(uid, parsed.logs, prevLogIds),
+            replaceCloudCustomPlans(uid, nextCustomPlans, prevPlanIds),
+            saveCloudPreferences(uid, parsed.preferences),
+          ]);
         });
       }
       return parsed.logs.length;
@@ -769,27 +1082,32 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   const activateDemoJourney = useCallback(async () => {
     const prevIds = logsRef.current.map((l) => l.id);
-    const { logs: demoLogs, preferences: demoPrefs } = await seedDemoSanctuary();
-    hydrateSilently(demoLogs, demoPrefs);
+    const { logs: demoLogs, preferences: demoPrefs, customPlans: demoPlans } =
+      await seedDemoSanctuary();
+    hydrateSilently(demoLogs, demoPrefs, demoPlans);
     setAnnouncement('Loaded sample reading journey.');
 
     const uid = userRef.current?.uid;
     if (uid) {
-      runCloudWrite(() => replaceCloudLogs(uid, demoLogs, prevIds));
+      runCloudWrite(() => replaceCloudLogs(uid, demoLogs, prevIds), 'logs');
     }
   }, [hydrateSilently, runCloudWrite]);
 
   const resetAllData = useCallback(async () => {
-    const prevIds = logsRef.current.map((l) => l.id);
+    const prevLogIds = logsRef.current.map((l) => l.id);
+    const prevPlanIds = customPlansRef.current.map((p) => p.id);
     await clearAllSanctuaryData();
-    hydrateSilently([], { ...DEFAULT_PREFERENCES });
+    hydrateSilently([], { ...DEFAULT_PREFERENCES }, []);
     setAnnouncement('Cleared all sanctuary reading logs.');
 
     const uid = userRef.current?.uid;
     if (uid) {
       runCloudWrite(async () => {
-        await replaceCloudLogs(uid, [], prevIds);
-        await saveCloudPreferences(uid, { ...DEFAULT_PREFERENCES });
+        await Promise.all([
+          replaceCloudLogs(uid, [], prevLogIds),
+          replaceCloudCustomPlans(uid, [], prevPlanIds),
+          saveCloudPreferences(uid, { ...DEFAULT_PREFERENCES }),
+        ]);
       });
     }
   }, [hydrateSilently, runCloudWrite]);
@@ -844,6 +1162,10 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const signOut = useCallback(async () => {
     cloudUnsubRef.current?.();
     cloudUnsubRef.current = null;
+    pendingWritesRef.current = 0;
+    pendingPrefsWritesRef.current = 0;
+    pendingLogWritesRef.current = 0;
+    pendingCustomPlanWritesRef.current = 0;
     await signOutAccount();
     setLocalOwnerUid(null);
     await clearAllSanctuaryData();
@@ -853,7 +1175,7 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setSyncStatus('local');
     setSyncError(null);
     setLastSyncedAt(null);
-    hydrateSilently([], { ...DEFAULT_PREFERENCES });
+    hydrateSilently([], { ...DEFAULT_PREFERENCES }, []);
     setAnnouncement('Signed out of your Selah account.');
   }, [hydrateSilently]);
 
@@ -872,7 +1194,10 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setSyncStatus('syncing');
       setSyncError(null);
       try {
-        const cloudLogs = await fetchCloudLogs(activeUser.uid);
+        const [cloudLogs, cloudCustomPlans] = await Promise.all([
+          fetchCloudLogs(activeUser.uid),
+          fetchCloudCustomPlans(activeUser.uid),
+        ]);
         const mergedById = new Map<string, ReadingLogEntry>();
         for (const item of cloudLogs) {
           mergedById.set(item.id, item);
@@ -885,26 +1210,50 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           }
         }
 
+        const mergedPlansById = new Map<string, CustomPlanDefinition>();
+        for (const p of cloudCustomPlans) {
+          mergedPlansById.set(p.id, p);
+        }
+        const plansToUpload: CustomPlanDefinition[] = [];
+        for (const gp of pending.guestCustomPlans) {
+          if (!mergedPlansById.has(gp.id)) {
+            mergedPlansById.set(gp.id, gp);
+            plansToUpload.push(gp);
+          }
+        }
+
         const mergedLogs = [...mergedById.values()];
+        const mergedCustomPlans = [...mergedPlansById.values()];
         const mergedSeen = Array.from(
           new Set([
             ...prefsRef.current.seenAchievementIds,
             ...pending.guestPreferences.seenAchievementIds,
           ])
         ).slice(0, 100);
+        const mergedShelf = sanitizeShelfPlanIds([
+          ...(prefsRef.current.shelfPlanIds ?? CORE_DEFAULT_PLAN_IDS),
+          ...(pending.guestPreferences.shelfPlanIds ?? CORE_DEFAULT_PLAN_IDS),
+        ]);
         const mergedPrefs: UserPreferences = {
           ...prefsRef.current,
           seenAchievementIds: mergedSeen,
+          shelfPlanIds: mergedShelf,
         };
 
-        if (toUpload.length > 0) {
-          await batchSyncReadingLogs(activeUser.uid, toUpload, []);
-        }
-        await saveCloudPreferences(activeUser.uid, mergedPrefs);
-        await replaceAllLogs(mergedLogs);
-        await persistPreferences(mergedPrefs);
+        await Promise.all([
+          toUpload.length > 0
+            ? batchSyncReadingLogs(activeUser.uid, toUpload, [])
+            : Promise.resolve(),
+          plansToUpload.length > 0
+            ? batchSyncCustomPlans(activeUser.uid, plansToUpload, [])
+            : Promise.resolve(),
+          saveCloudPreferences(activeUser.uid, mergedPrefs),
+          replaceAllLogs(mergedLogs),
+          replaceAllCustomPlans(mergedCustomPlans),
+          persistPreferences(mergedPrefs),
+        ]);
 
-        hydrateSilently(mergedLogs, mergedPrefs);
+        hydrateSilently(mergedLogs, mergedPrefs, mergedCustomPlans);
         setPendingMerge(null);
         setSyncStatus('synced');
         setLastSyncedAt(new Date().toISOString());
@@ -926,16 +1275,20 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setSyncStatus('syncing');
     setSyncError(null);
     try {
-      const [cloudUser, cloudLogs] = await Promise.all([
+      const [cloudUser, cloudLogs, cloudCustomPlans] = await Promise.all([
         ensureCloudUserDoc(activeUser, {
           preferences: prefsRef.current,
           colorScheme: colorSchemeRef.current,
         }),
         fetchCloudLogs(activeUser.uid),
+        fetchCloudCustomPlans(activeUser.uid),
       ]);
-      hydrateSilently(cloudLogs, cloudUser.preferences);
-      await replaceAllLogs(cloudLogs);
-      await persistPreferences(cloudUser.preferences);
+      hydrateSilently(cloudLogs, cloudUser.preferences, cloudCustomPlans);
+      await Promise.all([
+        replaceAllLogs(cloudLogs),
+        replaceAllCustomPlans(cloudCustomPlans),
+        persistPreferences(cloudUser.preferences),
+      ]);
       if (cloudUser.colorScheme !== colorSchemeRef.current) {
         applyColorScheme(cloudUser.colorScheme);
         setColorSchemeState(cloudUser.colorScheme);
@@ -954,6 +1307,9 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     ready,
     logs,
     preferences,
+    customPlans,
+    customReadingPlans,
+    allPlans,
     colorScheme,
     summary,
     achievements,
@@ -968,6 +1324,11 @@ export const BibleStoreProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     pendingMerge,
     setColorScheme,
     updatePreferences,
+    activateReadingPlan,
+    removePlanFromShelf,
+    restoreDefaultShelfPlans,
+    saveCustomPlan,
+    removeCustomPlan,
     logChapters,
     toggleChapter,
     markBookComplete,

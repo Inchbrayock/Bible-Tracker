@@ -134,6 +134,40 @@ export interface AchievementStatus {
   percentage: number;
 }
 
+export type ReadingPlanCategory =
+  | 'whole-bible'
+  | 'old-testament'
+  | 'new-testament'
+  | 'gospels'
+  | 'wisdom'
+  | 'prophets'
+  | 'epistles'
+  | 'custom';
+
+export type ReadingPlanOrder =
+  | 'canonical'
+  | 'chronological'
+  | 'paired'
+  | 'thematic'
+  | 'custom';
+
+export interface CustomPlanSection {
+  bookId: string;
+  startChapter?: number;
+  endChapter?: number;
+}
+
+export interface CustomPlanDefinition {
+  id: string;
+  title: string;
+  description: string;
+  sections: CustomPlanSection[];
+  durationDays: number;
+  accentColor: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ReadingPlan {
   id: string;
   title: string;
@@ -142,6 +176,10 @@ export interface ReadingPlan {
   accentColor: string;
   description: string;
   days: ReadingPlanDay[];
+  category?: ReadingPlanCategory;
+  order?: ReadingPlanOrder;
+  isCustom?: boolean;
+  customDefinition?: CustomPlanDefinition;
 }
 
 export interface ReadingPlanDay {
@@ -157,6 +195,7 @@ export interface UserPreferences {
   celebrationsEnabled: boolean;
   activePlanId: string | null;
   seenAchievementIds: string[];
+  shelfPlanIds?: string[];
 }
 
 export interface SanctuaryBackup {
@@ -164,4 +203,5 @@ export interface SanctuaryBackup {
   exportedAt: string;
   logs: ReadingLogEntry[];
   preferences: UserPreferences;
+  customPlans?: CustomPlanDefinition[];
 }

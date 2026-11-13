@@ -1,7 +1,12 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccountUser } from '../lib/auth';
-import type { ColorSchemePreference, ReadingLogEntry, UserPreferences } from '../types/bible';
+import type {
+  ColorSchemePreference,
+  CustomPlanDefinition,
+  ReadingLogEntry,
+  UserPreferences,
+} from '../types/bible';
 import { DEFAULT_PREFERENCES } from '../db/repository';
 
 type AuthListener = (user: AccountUser | null) => void;
@@ -14,6 +19,7 @@ type UserDocHandler = (
   fromCache: boolean
 ) => void;
 type LogsHandler = (logs: ReadingLogEntry[], fromCache: boolean) => void;
+type CustomPlansHandler = (plans: CustomPlanDefinition[], fromCache: boolean) => void;
 
 const mockState = vi.hoisted(() => {
   const authListeners = new Set<AuthListener>();
@@ -22,9 +28,14 @@ const mockState = vi.hoisted(() => {
     { displayName: string; preferences: UserPreferences; colorScheme: ColorSchemePreference }
   >();
   const cloudLogsByUid = new Map<string, Map<string, ReadingLogEntry>>();
+  const cloudCustomPlansByUid = new Map<string, Map<string, CustomPlanDefinition>>();
   const cloudSubscribers = new Map<
     string,
-    Set<{ onUserDoc: UserDocHandler; onLogs: LogsHandler }>
+    Set<{
+      onUserDoc: UserDocHandler;
+      onLogs: LogsHandler;
+      onCustomPlans?: CustomPlansHandler;
+    }>
   >();
 
   let currentUser: AccountUser | null = null;
@@ -34,9 +45,11 @@ const mockState = vi.hoisted(() => {
     if (!subs) return;
     const uDoc = userDocs.get(uid);
     const logs = [...(cloudLogsByUid.get(uid)?.values() ?? [])];
+    const customPlans = [...(cloudCustomPlansByUid.get(uid)?.values() ?? [])];
     for (const sub of subs) {
       if (uDoc) sub.onUserDoc(uDoc, false);
       sub.onLogs(logs, false);
+      sub.onCustomPlans?.(customPlans, false);
     }
   };
 
@@ -44,6 +57,7 @@ const mockState = vi.hoisted(() => {
     authListeners,
     userDocs,
     cloudLogsByUid,
+    cloudCustomPlansByUid,
     cloudSubscribers,
     getCurrentUser: () => currentUser,
     setCurrentUser: (user: AccountUser | null) => {
@@ -58,6 +72,7 @@ const mockState = vi.hoisted(() => {
       authListeners.clear();
       userDocs.clear();
       cloudLogsByUid.clear();
+      cloudCustomPlansByUid.clear();
       cloudSubscribers.clear();
     },
   };
@@ -128,6 +143,9 @@ const cloudSpies = vi.hoisted(() => ({
   upsertCloudReadingLog: vi.fn(),
   deleteCloudReadingLog: vi.fn(),
   batchSyncReadingLogs: vi.fn(),
+  upsertCloudCustomPlan: vi.fn(),
+  deleteCloudCustomPlan: vi.fn(),
+  batchSyncCustomPlans: vi.fn(),
   saveCloudPreferences: vi.fn(),
   saveCloudColorScheme: vi.fn(),
   saveCloudDisplayName: vi.fn(),
@@ -155,10 +173,18 @@ vi.mock('../db/cloudSync', () => ({
   fetchCloudLogs: vi.fn(async (uid: string) => {
     return [...(mockState.cloudLogsByUid.get(uid)?.values() ?? [])];
   }),
+  fetchCloudCustomPlans: vi.fn(async (uid: string) => {
+    return [...(mockState.cloudCustomPlansByUid.get(uid)?.values() ?? [])];
+  }),
   subscribeCloudSanctuary: vi.fn(
     (
       uid: string,
-      handlers: { onUserDoc: UserDocHandler; onLogs: LogsHandler; onError: (err: Error) => void }
+      handlers: {
+        onUserDoc: UserDocHandler;
+        onLogs: LogsHandler;
+        onCustomPlans?: CustomPlansHandler;
+        onError: (err: Error) => void;
+      }
     ) => {
       const set = mockState.cloudSubscribers.get(uid) ?? new Set();
       set.add(handlers);
@@ -225,6 +251,40 @@ vi.mock('../db/cloudSync', () => ({
     mockState.cloudLogsByUid.set(uid, map);
     mockState.notifyUser(uid);
   }),
+  upsertCloudCustomPlan: cloudSpies.upsertCloudCustomPlan.mockImplementation(
+    async (uid: string, plan: CustomPlanDefinition) => {
+      const map =
+        mockState.cloudCustomPlansByUid.get(uid) ?? new Map<string, CustomPlanDefinition>();
+      map.set(plan.id, plan);
+      mockState.cloudCustomPlansByUid.set(uid, map);
+      mockState.notifyUser(uid);
+    }
+  ),
+  deleteCloudCustomPlan: cloudSpies.deleteCloudCustomPlan.mockImplementation(
+    async (uid: string, planId: string) => {
+      const map = mockState.cloudCustomPlansByUid.get(uid);
+      map?.delete(planId);
+      mockState.notifyUser(uid);
+    }
+  ),
+  batchSyncCustomPlans: cloudSpies.batchSyncCustomPlans.mockImplementation(
+    async (uid: string, upserts: CustomPlanDefinition[], deleteIds: string[]) => {
+      const map =
+        mockState.cloudCustomPlansByUid.get(uid) ?? new Map<string, CustomPlanDefinition>();
+      for (const id of deleteIds) map.delete(id);
+      for (const plan of upserts) map.set(plan.id, plan);
+      mockState.cloudCustomPlansByUid.set(uid, map);
+      mockState.notifyUser(uid);
+    }
+  ),
+  replaceCloudCustomPlans: vi.fn(
+    async (uid: string, nextPlans: CustomPlanDefinition[]) => {
+      const map = new Map<string, CustomPlanDefinition>();
+      for (const plan of nextPlans) map.set(plan.id, plan);
+      mockState.cloudCustomPlansByUid.set(uid, map);
+      mockState.notifyUser(uid);
+    }
+  ),
 }));
 
 import { App } from '../App';
@@ -601,5 +661,79 @@ describe('Firebase Account & Cloud Sync', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('account-popover')).not.toBeInTheDocument();
     });
+  }, 15000);
+
+  it('persists deleted default shelf plans in cloud sync without stale snapshot bounce-back', async () => {
+    mockState.userDocs.set('email-uid-1', {
+      displayName: 'Hannah',
+      preferences: { ...DEFAULT_PREFERENCES },
+      colorScheme: 'system',
+    });
+
+    let resolvePendingWrite!: () => void;
+    const defaultImpl = cloudSpies.saveCloudPreferences.getMockImplementation();
+    cloudSpies.saveCloudPreferences.mockImplementationOnce(
+      async (uid: string, preferences: UserPreferences) => {
+        await new Promise<void>((resolve) => {
+          resolvePendingWrite = resolve;
+        });
+        const current = mockState.userDocs.get(uid);
+        if (current) {
+          mockState.userDocs.set(uid, { ...current, preferences });
+          mockState.notifyUser(uid);
+        }
+      }
+    );
+
+    render(<App />);
+    expect(await screen.findByText(/Canonical Journey/i)).toBeInTheDocument();
+
+    await act(async () => {
+      mockState.setCurrentUser({
+        uid: 'email-uid-1',
+        email: 'hannah@selah.app',
+        displayName: 'Hannah',
+        photoURL: null,
+        emailVerified: true,
+        providerIds: ['password'],
+      });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Journal & Plans/i }));
+    expect(await screen.findByText(/Reading Journal/i)).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: /Reading Plans/i }));
+
+    const selectorGroup = await screen.findByRole('group', { name: /Choose a reading plan/i });
+    const card = within(selectorGroup).getByText(/Canonical Bible in 1 Year/i).closest('article')!;
+    fireEvent.click(within(card).getByRole('button', { name: /Delete plan from shelf/i }));
+    fireEvent.click(within(card).getByRole('button', { name: /Confirm delete/i }));
+
+    await waitFor(() => {
+      expect(within(selectorGroup).getAllByRole('article')).toHaveLength(3);
+    });
+
+    // While the cloud write is still in flight, a stale snapshot with 4 default plans must not restore the deleted plan
+    await act(async () => {
+      mockState.notifyUser('email-uid-1');
+    });
+    expect(within(selectorGroup).getAllByRole('article')).toHaveLength(3);
+    expect(within(selectorGroup).queryByText(/Canonical Bible in 1 Year/i)).not.toBeInTheDocument();
+
+    await act(async () => {
+      resolvePendingWrite();
+    });
+
+    await waitFor(() => {
+      expect(mockState.userDocs.get('email-uid-1')?.preferences.shelfPlanIds).toEqual([
+        'gospels-acts-45',
+        'psalms-proverbs-31',
+        'nt-90',
+      ]);
+    });
+    expect(within(selectorGroup).getAllByRole('article')).toHaveLength(3);
+
+    if (defaultImpl) {
+      cloudSpies.saveCloudPreferences.mockImplementation(defaultImpl);
+    }
   }, 15000);
 });

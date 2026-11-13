@@ -18,11 +18,12 @@ rules_version = '2';
 //      - uid: string (required, immutable, == {userId} and request.auth.uid, 1..128 chars)
 //      - email: string (required, "" if auth provider omits email, or valid email <= 254 chars)
 //      - displayName: string (required, 0..100 chars)
-//      - preferences: map (required, exact keys only):
+//      - preferences: map (required, allowed keys only):
 //          - streakGraceEnabled: bool (required)
 //          - celebrationsEnabled: bool (required)
 //          - activePlanId: string | null (required key, null or 1..64 chars)
 //          - seenAchievementIds: list (required, 0..100 items, each string 1..64 chars)
+//          - shelfPlanIds: list (optional, 0..100 items, each string matching ^[a-z0-9-]{1,64}$)
 //      - colorScheme: string (required, one of: 'system', 'light', 'dark')
 //      - createdAt: timestamp (required, immutable, must equal request.time on create)
 //      - updatedAt: timestamp (required, must equal request.time on create and update)
@@ -48,6 +49,28 @@ rules_version = '2';
 //      - loggedAt: string (required, ISO 8601 date/instant string, 10..40 chars)
 //      - note: string (optional, 1..2000 chars if present)
 //      - planId: string (optional, 1..64 chars if present)
+//      - updatedAt: timestamp (required, must equal request.time on create and update)
+//
+// 3. Subcollection: users/{userId}/customPlans
+//    Document ID: {planId} (1..64 chars, ^[a-zA-Z0-9_-]{1,64}$)
+//    Access: Strictly private to the owner (`request.auth.uid == userId`).
+//    Query & Batch Notes:
+//      - Client queries (`getDocs(collection(db, 'users', uid, 'customPlans'))` and
+//        `onSnapshot(...)`) do not filter by `.where('uid', ...)`, so `allow read`
+//        checks `isOwner(userId)` only (not `resource.data.uid`).
+//      - Rules deliberately avoid `exists()` on parent `users/{userId}` so
+//        `writeBatch` sync operations cannot hit Firestore's per-batch
+//        `exists()`/`get()` lookup limits.
+//    Fields:
+//      - id: string (required, immutable, == {planId}, 1..64 chars, ^[a-zA-Z0-9_-]{1,64}$)
+//      - uid: string (required, immutable, == {userId} and request.auth.uid, 1..128 chars)
+//      - title: string (required, 1..80 chars)
+//      - description: string (required, 0..280 chars)
+//      - sectionsSpec: string (required, 1..2000 chars, matches ^[a-z0-9-]+(:[0-9]+(-[0-9]+)?)?(,[a-z0-9-]+(:[0-9]+(-[0-9]+)?)?)*$)
+//      - durationDays: int (required, 1..1189)
+//      - accentColor: string (required, one of allowed CSS custom property tokens)
+//      - createdAt: string (required, immutable, ISO 8601 date/instant string, 10..40 chars)
+//      - clientUpdatedAt: string (required, ISO 8601 date/instant string, 10..40 chars)
 //      - updatedAt: timestamp (required, must equal request.time on create and update)
 //
 // ===============================================================
@@ -197,22 +220,46 @@ service cloud.firestore {
         ));
     }
 
+    // Validate shelfPlanIds (0..100 plan IDs matching ^[a-z0-9-]{1,64}$).
+    // Uses join/matches/split rather than unrolled indexing so both 100-item
+    // arrays in preferences stay well within Firestore's 1,000-expression limit.
+    function isValidNonEmptyShelfPlanIds(ids) {
+      let joined = ids.join(',');
+      return joined.size() <= 6499 &&
+        joined.matches("^[a-z0-9-]{1,64}(,[a-z0-9-]{1,64})*$") &&
+        joined.split(',') == ids;
+    }
+
+    function isValidShelfPlanIds(ids) {
+      return ids is list &&
+        ids.size() <= 100 &&
+        (ids.size() == 0 || isValidNonEmptyShelfPlanIds(ids));
+    }
+
     function isValidPreferences(prefs) {
-      let prefKeys = [
+      let allowedPrefKeys = [
+        'streakGraceEnabled',
+        'celebrationsEnabled',
+        'activePlanId',
+        'seenAchievementIds',
+        'shelfPlanIds'
+      ];
+      let requiredPrefKeys = [
         'streakGraceEnabled',
         'celebrationsEnabled',
         'activePlanId',
         'seenAchievementIds'
       ];
-      return isValidMap(prefs, prefKeys) &&
-        prefs.keys().hasAll(prefKeys) &&
+      return isValidMap(prefs, allowedPrefKeys) &&
+        prefs.keys().hasAll(requiredPrefKeys) &&
         prefs.streakGraceEnabled is bool &&
         prefs.celebrationsEnabled is bool &&
         (prefs.activePlanId == null ||
           (prefs.activePlanId is string &&
            prefs.activePlanId.size() >= 1 &&
            prefs.activePlanId.size() <= 64)) &&
-        isValidSeenAchievementIds(prefs.seenAchievementIds);
+        isValidSeenAchievementIds(prefs.seenAchievementIds) &&
+        (!('shelfPlanIds' in prefs) || isValidShelfPlanIds(prefs.shelfPlanIds));
     }
 
     function isValidUser(data, userId) {
@@ -309,6 +356,65 @@ service cloud.firestore {
         data.updatedAt is timestamp;
     }
 
+    function isValidPlanAccentColor(color) {
+      return color is string &&
+        color in [
+          'var(--color-accent)',
+          'var(--color-sage)',
+          'var(--color-lamp)',
+          'var(--div-pentateuch)',
+          'var(--div-history)',
+          'var(--div-wisdom)',
+          'var(--div-major)',
+          'var(--div-minor)',
+          'var(--div-gospels)',
+          'var(--div-pauline)',
+          'var(--div-general)'
+        ];
+    }
+
+    function isValidCustomPlan(data, userId, planId) {
+      let planKeys = [
+        'id',
+        'uid',
+        'title',
+        'description',
+        'sectionsSpec',
+        'durationDays',
+        'accentColor',
+        'createdAt',
+        'clientUpdatedAt',
+        'updatedAt'
+      ];
+      return hasOnlyAllowedFields(planKeys) &&
+        hasRequiredFields(planKeys) &&
+        data.id is string &&
+        data.id == planId &&
+        data.id.size() >= 1 &&
+        data.id.size() <= 64 &&
+        data.id.matches("^[a-zA-Z0-9_-]{1,64}$") &&
+        data.uid is string &&
+        data.uid == userId &&
+        data.uid.size() >= 1 &&
+        data.uid.size() <= 128 &&
+        data.title is string &&
+        data.title.size() >= 1 &&
+        data.title.size() <= 80 &&
+        data.description is string &&
+        data.description.size() <= 280 &&
+        data.sectionsSpec is string &&
+        data.sectionsSpec.size() >= 1 &&
+        data.sectionsSpec.size() <= 2000 &&
+        data.sectionsSpec.matches("^[a-z0-9-]+(:[0-9]+(-[0-9]+)?)?(,[a-z0-9-]+(:[0-9]+(-[0-9]+)?)?)*$") &&
+        data.durationDays is int &&
+        data.durationDays >= 1 &&
+        data.durationDays <= 1189 &&
+        isValidPlanAccentColor(data.accentColor) &&
+        isValidIsoInstantOrDate(data.createdAt) &&
+        isValidIsoInstantOrDate(data.clientUpdatedAt) &&
+        data.updatedAt is timestamp;
+    }
+
     // ===============================================================
     // Collection Rules
     // ===============================================================
@@ -348,6 +454,28 @@ service cloud.firestore {
           uidNotModified() &&
           areImmutableFieldsUnchanged(['id', 'uid']) &&
           isValidReadingLog(request.resource.data, userId, logId) &&
+          isServerTimestamp(request.resource.data.updatedAt);
+
+        allow delete: if isOwner(userId) &&
+          resource != null &&
+          resource.data.uid == userId;
+      }
+
+      match /customPlans/{planId} {
+        // Owner-only read without resource.data.uid check so unfiltered collection
+        // queries (getDocs / onSnapshot) succeed for the owning user.
+        allow read: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+          uidUnchanged() &&
+          isValidCustomPlan(request.resource.data, userId, planId) &&
+          isServerTimestamp(request.resource.data.updatedAt);
+
+        allow update: if isOwner(userId) &&
+          isDocOwner() &&
+          uidNotModified() &&
+          areImmutableFieldsUnchanged(['id', 'uid', 'createdAt']) &&
+          isValidCustomPlan(request.resource.data, userId, planId) &&
           isServerTimestamp(request.resource.data.updatedAt);
 
         allow delete: if isOwner(userId) &&

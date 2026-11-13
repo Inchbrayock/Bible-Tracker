@@ -1,14 +1,62 @@
 import { db } from './database';
 import { createDemoReadingLogs } from './demoSeed';
+import { CORE_DEFAULT_PLAN_IDS } from '../data/readingPlans';
+import { sanitizeCustomPlanDefinition } from '../lib/customPlans';
 import { todayPlainDate } from '../lib/dates';
-import type { ReadingLogEntry, SanctuaryBackup, UserPreferences } from '../types/bible';
+import { sanitizeShelfPlanIds } from '../lib/plans';
+import type {
+  CustomPlanDefinition,
+  ReadingLogEntry,
+  SanctuaryBackup,
+  UserPreferences,
+} from '../types/bible';
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   streakGraceEnabled: true,
   celebrationsEnabled: true,
   activePlanId: 'gospels-acts-45',
   seenAchievementIds: [],
+  shelfPlanIds: [...CORE_DEFAULT_PLAN_IDS],
 };
+
+export function normalizeUserPreferences(
+  input: Partial<UserPreferences> | undefined,
+  legacyCustomPlans: CustomPlanDefinition[] = []
+): UserPreferences {
+  const rawSeen = Array.isArray(input?.seenAchievementIds) ? input.seenAchievementIds : [];
+  const seenAchievementIds = rawSeen
+    .filter((id): id is string => typeof id === 'string' && id.length > 0 && id.length <= 64)
+    .slice(0, 100);
+
+  const activePlanId =
+    typeof input?.activePlanId === 'string' && input.activePlanId.length > 0
+      ? input.activePlanId.slice(0, 64)
+      : input?.activePlanId === null
+        ? null
+        : DEFAULT_PREFERENCES.activePlanId;
+
+  const legacyFallback = [
+    ...CORE_DEFAULT_PLAN_IDS,
+    ...legacyCustomPlans.map((p) => p.id),
+    ...(activePlanId ? [activePlanId] : []),
+  ];
+
+  const shelfPlanIds = sanitizeShelfPlanIds(input?.shelfPlanIds, legacyFallback);
+
+  return {
+    streakGraceEnabled:
+      typeof input?.streakGraceEnabled === 'boolean'
+        ? input.streakGraceEnabled
+        : DEFAULT_PREFERENCES.streakGraceEnabled,
+    celebrationsEnabled:
+      typeof input?.celebrationsEnabled === 'boolean'
+        ? input.celebrationsEnabled
+        : DEFAULT_PREFERENCES.celebrationsEnabled,
+    activePlanId,
+    seenAchievementIds,
+    shelfPlanIds,
+  };
+}
 
 const FALLBACK_STORAGE_KEY = 'selah-fallback-sanctuary-v1';
 const LOCAL_OWNER_UID_KEY = 'selah-cloud-owner-uid';
@@ -40,25 +88,45 @@ function createId(): string {
   return `log-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-async function readFallback(): Promise<{ logs: ReadingLogEntry[]; preferences: UserPreferences }> {
+async function readFallback(): Promise<{
+  logs: ReadingLogEntry[];
+  preferences: UserPreferences;
+  customPlans: CustomPlanDefinition[];
+}> {
   try {
     const raw = localStorage.getItem(FALLBACK_STORAGE_KEY);
-    if (!raw) return { logs: [], preferences: { ...DEFAULT_PREFERENCES } };
+    if (!raw) return { logs: [], preferences: { ...DEFAULT_PREFERENCES }, customPlans: [] };
     const parsed = JSON.parse(raw) as Partial<SanctuaryBackup>;
+    const customPlans = Array.isArray(parsed.customPlans)
+      ? parsed.customPlans
+          .map((item) => sanitizeCustomPlanDefinition(item))
+          .filter((item): item is CustomPlanDefinition => item !== null)
+      : [];
     return {
       logs: Array.isArray(parsed.logs) ? parsed.logs : [],
-      preferences: { ...DEFAULT_PREFERENCES, ...(parsed.preferences ?? {}) },
+      preferences: normalizeUserPreferences(parsed.preferences, customPlans),
+      customPlans,
     };
   } catch {
-    return { logs: [], preferences: { ...DEFAULT_PREFERENCES } };
+    return { logs: [], preferences: { ...DEFAULT_PREFERENCES }, customPlans: [] };
   }
 }
 
-async function writeFallback(logs: ReadingLogEntry[], preferences: UserPreferences): Promise<void> {
+async function writeFallback(
+  logs: ReadingLogEntry[],
+  preferences: UserPreferences,
+  customPlans: CustomPlanDefinition[]
+): Promise<void> {
   try {
     localStorage.setItem(
       FALLBACK_STORAGE_KEY,
-      JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), logs, preferences })
+      JSON.stringify({
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        logs,
+        preferences,
+        customPlans,
+      })
     );
   } catch {
     // Ignore storage error
@@ -68,15 +136,21 @@ async function writeFallback(logs: ReadingLogEntry[], preferences: UserPreferenc
 export async function loadSanctuaryState(): Promise<{
   logs: ReadingLogEntry[];
   preferences: UserPreferences;
+  customPlans: CustomPlanDefinition[];
 }> {
   try {
-    const [logs, prefRow] = await Promise.all([
+    const [logs, prefRow, rawCustomPlans] = await Promise.all([
       db.readingLogs.toArray(),
       db.preferences.get('user'),
+      db.customPlans.toArray(),
     ]);
+    const customPlans = rawCustomPlans
+      .map((item) => sanitizeCustomPlanDefinition(item))
+      .filter((item): item is CustomPlanDefinition => item !== null);
     return {
       logs,
-      preferences: { ...DEFAULT_PREFERENCES, ...(prefRow?.value ?? {}) },
+      preferences: normalizeUserPreferences(prefRow?.value, customPlans),
+      customPlans,
     };
   } catch {
     return readFallback();
@@ -88,7 +162,47 @@ export async function persistPreferences(preferences: UserPreferences): Promise<
     await db.preferences.put({ key: 'user', value: preferences });
   } catch {
     const current = await readFallback();
-    await writeFallback(current.logs, preferences);
+    await writeFallback(current.logs, preferences, current.customPlans);
+  }
+}
+
+export async function upsertCustomPlan(plan: CustomPlanDefinition): Promise<void> {
+  try {
+    await db.customPlans.put(plan);
+  } catch {
+    const current = await readFallback();
+    const exists = current.customPlans.some((p) => p.id === plan.id);
+    const nextPlans = exists
+      ? current.customPlans.map((p) => (p.id === plan.id ? plan : p))
+      : [...current.customPlans, plan];
+    await writeFallback(current.logs, current.preferences, nextPlans);
+  }
+}
+
+export async function deleteCustomPlan(id: string): Promise<void> {
+  try {
+    await db.customPlans.delete(id);
+  } catch {
+    const current = await readFallback();
+    await writeFallback(
+      current.logs,
+      current.preferences,
+      current.customPlans.filter((p) => p.id !== id)
+    );
+  }
+}
+
+export async function replaceAllCustomPlans(customPlans: CustomPlanDefinition[]): Promise<void> {
+  const current = await loadSanctuaryState();
+  try {
+    await db.transaction('rw', db.customPlans, async () => {
+      await db.customPlans.clear();
+      if (customPlans.length > 0) {
+        await db.customPlans.bulkPut(customPlans);
+      }
+    });
+  } catch {
+    await writeFallback(current.logs, current.preferences, customPlans);
   }
 }
 
@@ -114,7 +228,7 @@ export async function addReadingLog(input: {
     await db.readingLogs.put(entry);
   } catch {
     const current = await readFallback();
-    await writeFallback([...current.logs, entry], current.preferences);
+    await writeFallback([...current.logs, entry], current.preferences, current.customPlans);
   }
   return entry;
 }
@@ -139,7 +253,7 @@ export async function updateReadingLog(
   } catch {
     const current = await readFallback();
     const updated = current.logs.map((l) => (l.id === id ? { ...l, ...sanitizedPatch } : l));
-    await writeFallback(updated, current.preferences);
+    await writeFallback(updated, current.preferences, current.customPlans);
   }
 }
 
@@ -150,7 +264,8 @@ export async function deleteReadingLog(id: string): Promise<void> {
     const current = await readFallback();
     await writeFallback(
       current.logs.filter((l) => l.id !== id),
-      current.preferences
+      current.preferences,
+      current.customPlans
     );
   }
 }
@@ -164,7 +279,7 @@ export async function removeChaptersFromBookLogs(
   chaptersToRemove: number[]
 ): Promise<ReadingLogEntry[]> {
   const removeSet = new Set(chaptersToRemove);
-  const { logs, preferences } = await loadSanctuaryState();
+  const { logs, preferences, customPlans } = await loadSanctuaryState();
   const nextLogs: ReadingLogEntry[] = [];
 
   for (const log of logs) {
@@ -186,14 +301,14 @@ export async function removeChaptersFromBookLogs(
       }
     });
   } catch {
-    await writeFallback(nextLogs, preferences);
+    await writeFallback(nextLogs, preferences, customPlans);
   }
 
   return nextLogs;
 }
 
 export async function replaceAllLogs(logs: ReadingLogEntry[]): Promise<void> {
-  const { preferences } = await loadSanctuaryState();
+  const { preferences, customPlans } = await loadSanctuaryState();
   try {
     await db.transaction('rw', db.readingLogs, async () => {
       await db.readingLogs.clear();
@@ -202,40 +317,44 @@ export async function replaceAllLogs(logs: ReadingLogEntry[]): Promise<void> {
       }
     });
   } catch {
-    await writeFallback(logs, preferences);
+    await writeFallback(logs, preferences, customPlans);
   }
 }
 
 export async function seedDemoSanctuary(): Promise<{
   logs: ReadingLogEntry[];
   preferences: UserPreferences;
+  customPlans: CustomPlanDefinition[];
 }> {
   const demoLogs = createDemoReadingLogs();
-  const { preferences } = await loadSanctuaryState();
+  const { preferences, customPlans } = await loadSanctuaryState();
   await replaceAllLogs(demoLogs);
-  return { logs: demoLogs, preferences };
+  return { logs: demoLogs, preferences, customPlans };
 }
 
 export async function clearAllSanctuaryData(): Promise<void> {
   try {
-    await db.transaction('rw', db.readingLogs, db.preferences, async () => {
+    await db.transaction('rw', db.readingLogs, db.preferences, db.customPlans, async () => {
       await db.readingLogs.clear();
       await db.preferences.put({ key: 'user', value: { ...DEFAULT_PREFERENCES } });
+      await db.customPlans.clear();
     });
   } catch {
-    await writeFallback([], { ...DEFAULT_PREFERENCES });
+    await writeFallback([], { ...DEFAULT_PREFERENCES }, []);
   }
 }
 
 export function buildBackupPayload(
   logs: ReadingLogEntry[],
-  preferences: UserPreferences
+  preferences: UserPreferences,
+  customPlans: CustomPlanDefinition[] = []
 ): SanctuaryBackup {
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
     logs,
     preferences,
+    ...(customPlans.length > 0 ? { customPlans } : {}),
   };
 }
 
@@ -260,10 +379,17 @@ export function parseAndValidateBackup(rawJson: string): SanctuaryBackup {
     }))
     .filter((item) => item.chapters.length > 0);
 
+  const customPlans = Array.isArray(parsed.customPlans)
+    ? parsed.customPlans
+        .map((item) => sanitizeCustomPlanDefinition(item))
+        .filter((item): item is CustomPlanDefinition => item !== null)
+    : [];
+
   return {
     version: 1,
     exportedAt: typeof parsed.exportedAt === 'string' ? parsed.exportedAt : new Date().toISOString(),
     logs: sanitizedLogs,
-    preferences: { ...DEFAULT_PREFERENCES, ...(parsed.preferences ?? {}) },
+    preferences: normalizeUserPreferences(parsed.preferences, customPlans),
+    customPlans,
   };
 }

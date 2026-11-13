@@ -22,7 +22,7 @@ export const ContinueReadingCard: React.FC<ContinueReadingCardProps> = ({
   onBrowseLibrary,
   onOpenPlans,
 }) => {
-  const { summary, preferences, logChapters } = useBibleStore();
+  const { summary, preferences, customReadingPlans, logChapters } = useBibleStore();
   const [justLoggedPlanDay, setJustLoggedPlanDay] = useState<number | null>(null);
 
   const inProgressBooks = useMemo(
@@ -34,17 +34,24 @@ export const ContinueReadingCard: React.FC<ContinueReadingCardProps> = ({
     [summary.bookProgressById]
   );
 
+  const hasShelfPlans =
+    !Array.isArray(preferences.shelfPlanIds) || preferences.shelfPlanIds.length > 0;
+
   const activePlan = useMemo(
-    () => getActiveReadingPlan(preferences.activePlanId),
-    [preferences.activePlanId]
+    () =>
+      hasShelfPlans && preferences.activePlanId
+        ? getActiveReadingPlan(preferences.activePlanId, customReadingPlans)
+        : null,
+    [customReadingPlans, hasShelfPlans, preferences.activePlanId]
   );
 
   const planProgress = useMemo(
-    () => computePlanProgress(activePlan, summary),
+    () => (activePlan ? computePlanProgress(activePlan, summary) : null),
     [activePlan, summary]
   );
 
   const handleLogNextPlanDay = async () => {
+    if (!activePlan || !planProgress) return;
     const targetDay = planProgress.nextDay;
     if (!targetDay) return;
     const today = todayPlainDate();
@@ -147,92 +154,112 @@ export const ContinueReadingCard: React.FC<ContinueReadingCardProps> = ({
 
       {/* Active Reading Plan Spotlight */}
       <div className="mt-5 border-t border-[var(--border-subtle)] pt-5">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <Compass className="h-4 w-4 shrink-0 text-[var(--color-accent)]" aria-hidden="true" />
-            <h3 className="truncate font-display text-lg font-medium text-[var(--text-primary)]">
-              {activePlan.title}
-            </h3>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-[var(--text-secondary)] tabular-nums">
-              {planProgress.completedDaysCount} of {activePlan.durationDays} days
-            </span>
+        {!activePlan || !planProgress ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Compass className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" aria-hidden="true" />
+              <p className="text-sm text-[var(--text-secondary)]">
+                No active reading plan on your shelf.
+              </p>
+            </div>
             <button
               type="button"
               onClick={onOpenPlans}
               className="tactile-press inline-flex min-h-8 items-center text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
             >
-              All plans
+              Choose a plan
             </button>
-          </div>
-        </div>
-
-        <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
-          <motion.div
-            className="h-full rounded-full"
-            initial={false}
-            animate={{ width: `${planProgress.percentage}%` }}
-            transition={SPRING_PROGRESS}
-            style={{
-              backgroundColor: activePlan.accentColor,
-            }}
-          />
-        </div>
-
-        {planProgress.nextDay ? (
-          <div className="mt-3.5 flex flex-col justify-between gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-3 sm:flex-row sm:items-center">
-            <div className="min-w-0">
-              <p className="text-xs font-medium text-[var(--text-secondary)]">
-                Day {planProgress.nextDay.day} reading
-              </p>
-              <p className="font-display text-base font-medium leading-snug text-[var(--text-primary)]">
-                {planProgress.nextDay.title}
-              </p>
-            </div>
-            <div className="relative w-full shrink-0 sm:w-auto">
-              <AnimatePresence>
-                {justLoggedPlanDay !== null ? (
-                  <motion.span
-                    key={justLoggedPlanDay}
-                    aria-hidden="true"
-                    initial={{ opacity: 0, y: 4, scale: 0.86 }}
-                    animate={{ opacity: 1, y: -22, scale: 1 }}
-                    exit={{ opacity: 0, y: -32, scale: 0.94 }}
-                    transition={SPRING_SEAL}
-                    className="pointer-events-none absolute right-2 top-0 z-10 inline-flex items-center gap-1 rounded-full border border-[var(--color-sage)] bg-[var(--color-sage-soft)] px-2.5 py-0.5 text-[0.7rem] font-semibold text-[var(--color-sage)] shadow-xs"
-                  >
-                    <Check className="h-3 w-3" aria-hidden="true" />
-                    Day {justLoggedPlanDay} logged
-                  </motion.span>
-                ) : null}
-              </AnimatePresence>
-
-              <motion.button
-                type="button"
-                whileTap={TACTILE_TAP}
-                transition={SPRING_TACTILE}
-                onClick={() => void handleLogNextPlanDay()}
-                className="btn-primary inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-md px-3.5 py-2 text-xs font-medium transition-opacity hover:opacity-90 sm:min-h-9 sm:w-auto sm:py-1.5"
-              >
-                <span>Log Day {planProgress.nextDay.day}</span>
-              </motion.button>
-            </div>
           </div>
         ) : (
-          <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-3">
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-sage)]">
-              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-              All {activePlan.durationDays} days completed
-            </span>
-            <button
-              type="button"
-              onClick={onOpenPlans}
-              className="tactile-press text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
-            >
-              Choose another plan
-            </button>
-          </div>
+          <>
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <Compass className="h-4 w-4 shrink-0 text-[var(--color-accent)]" aria-hidden="true" />
+                <h3 className="truncate font-display text-lg font-medium text-[var(--text-primary)]">
+                  {activePlan.title}
+                </h3>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-[var(--text-secondary)] tabular-nums">
+                  {planProgress.completedDaysCount} of {activePlan.durationDays} days
+                </span>
+                <button
+                  type="button"
+                  onClick={onOpenPlans}
+                  className="tactile-press inline-flex min-h-8 items-center text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
+                >
+                  All plans
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-2.5 h-1 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
+              <motion.div
+                className="h-full rounded-full"
+                initial={false}
+                animate={{ width: `${planProgress.percentage}%` }}
+                transition={SPRING_PROGRESS}
+                style={{
+                  backgroundColor: activePlan.accentColor,
+                }}
+              />
+            </div>
+
+            {planProgress.nextDay ? (
+              <div className="mt-3.5 flex flex-col justify-between gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-3 sm:flex-row sm:items-center">
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-[var(--text-secondary)]">
+                    Day {planProgress.nextDay.day} reading
+                  </p>
+                  <p className="font-display text-base font-medium leading-snug text-[var(--text-primary)]">
+                    {planProgress.nextDay.title}
+                  </p>
+                </div>
+                <div className="relative w-full shrink-0 sm:w-auto">
+                  <AnimatePresence>
+                    {justLoggedPlanDay !== null ? (
+                      <motion.span
+                        key={justLoggedPlanDay}
+                        aria-hidden="true"
+                        initial={{ opacity: 0, y: 4, scale: 0.86 }}
+                        animate={{ opacity: 1, y: -22, scale: 1 }}
+                        exit={{ opacity: 0, y: -32, scale: 0.94 }}
+                        transition={SPRING_SEAL}
+                        className="pointer-events-none absolute right-2 top-0 z-10 inline-flex items-center gap-1 rounded-full border border-[var(--color-sage)] bg-[var(--color-sage-soft)] px-2.5 py-0.5 text-[0.7rem] font-semibold text-[var(--color-sage)] shadow-xs"
+                      >
+                        <Check className="h-3 w-3" aria-hidden="true" />
+                        Day {justLoggedPlanDay} logged
+                      </motion.span>
+                    ) : null}
+                  </AnimatePresence>
+
+                  <motion.button
+                    type="button"
+                    whileTap={TACTILE_TAP}
+                    transition={SPRING_TACTILE}
+                    onClick={() => void handleLogNextPlanDay()}
+                    className="btn-primary inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-md px-3.5 py-2 text-xs font-medium transition-opacity hover:opacity-90 sm:min-h-9 sm:w-auto sm:py-1.5"
+                  >
+                    <span>Log Day {planProgress.nextDay.day}</span>
+                  </motion.button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-canvas)] px-3.5 py-3">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--color-sage)]">
+                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                  All {activePlan.durationDays} days completed
+                </span>
+                <button
+                  type="button"
+                  onClick={onOpenPlans}
+                  className="tactile-press text-xs font-medium text-[var(--color-accent)] underline-offset-4 hover:underline"
+                >
+                  Choose another plan
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>

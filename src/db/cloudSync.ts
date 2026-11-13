@@ -12,13 +12,19 @@ import {
   type DocumentData,
 } from 'firebase/firestore';
 import type { AccountUser } from '../lib/auth';
+import {
+  encodeCustomPlanSections,
+  sanitizeCustomPlanDefinition,
+  sanitizePlanAccentColor,
+} from '../lib/customPlans';
 import { getFirebaseServices } from '../lib/firebase';
 import type {
   ColorSchemePreference,
+  CustomPlanDefinition,
   ReadingLogEntry,
   UserPreferences,
 } from '../types/bible';
-import { DEFAULT_PREFERENCES } from './repository';
+import { normalizeUserPreferences } from './repository';
 
 const MAX_BATCH_OPS = 450;
 
@@ -37,30 +43,7 @@ function sanitizeColorScheme(value: unknown): ColorSchemePreference {
 }
 
 export function sanitizePreferences(input: Partial<UserPreferences> | undefined): UserPreferences {
-  const rawIds = Array.isArray(input?.seenAchievementIds) ? input.seenAchievementIds : [];
-  const seenAchievementIds = rawIds
-    .filter((id): id is string => typeof id === 'string' && id.length > 0 && id.length <= 64)
-    .slice(0, 100);
-
-  const activePlanId =
-    typeof input?.activePlanId === 'string' && input.activePlanId.length > 0
-      ? input.activePlanId.slice(0, 64)
-      : input?.activePlanId === null
-        ? null
-        : DEFAULT_PREFERENCES.activePlanId;
-
-  return {
-    streakGraceEnabled:
-      typeof input?.streakGraceEnabled === 'boolean'
-        ? input.streakGraceEnabled
-        : DEFAULT_PREFERENCES.streakGraceEnabled,
-    celebrationsEnabled:
-      typeof input?.celebrationsEnabled === 'boolean'
-        ? input.celebrationsEnabled
-        : DEFAULT_PREFERENCES.celebrationsEnabled,
-    activePlanId,
-    seenAchievementIds,
-  };
+  return normalizeUserPreferences(input);
 }
 
 function docToReadingLog(docId: string, data: DocumentData): ReadingLogEntry | null {
@@ -160,6 +143,38 @@ export async function ensureCloudUserDoc(
   };
 }
 
+function docToCustomPlan(docId: string, data: DocumentData): CustomPlanDefinition | null {
+  return sanitizeCustomPlanDefinition({
+    id: typeof data.id === 'string' && data.id ? data.id : docId,
+    title: data.title,
+    description: typeof data.description === 'string' ? data.description : '',
+    sectionsSpec: data.sectionsSpec,
+    durationDays: data.durationDays,
+    accentColor: sanitizePlanAccentColor(data.accentColor),
+    createdAt: data.createdAt,
+    updatedAt: typeof data.clientUpdatedAt === 'string' ? data.clientUpdatedAt : data.createdAt,
+  });
+}
+
+function buildCloudCustomPlanPayload(
+  uid: string,
+  plan: CustomPlanDefinition
+): Record<string, unknown> {
+  const sectionsSpec = encodeCustomPlanSections(plan.sections).slice(0, 2000);
+  return {
+    id: plan.id.slice(0, 64),
+    uid,
+    title: plan.title.trim().slice(0, 80),
+    description: plan.description.trim().slice(0, 280),
+    sectionsSpec,
+    durationDays: Math.max(1, Math.min(1189, Math.round(plan.durationDays))),
+    accentColor: sanitizePlanAccentColor(plan.accentColor),
+    createdAt: plan.createdAt.slice(0, 40),
+    clientUpdatedAt: plan.updatedAt.slice(0, 40),
+    updatedAt: serverTimestamp(),
+  };
+}
+
 export async function fetchCloudLogs(uid: string): Promise<ReadingLogEntry[]> {
   const services = getFirebaseServices();
   if (!services) return [];
@@ -170,6 +185,18 @@ export async function fetchCloudLogs(uid: string): Promise<ReadingLogEntry[]> {
     if (parsed) logs.push(parsed);
   });
   return logs;
+}
+
+export async function fetchCloudCustomPlans(uid: string): Promise<CustomPlanDefinition[]> {
+  const services = getFirebaseServices();
+  if (!services) return [];
+  const snap = await getDocs(collection(services.db, 'users', uid, 'customPlans'));
+  const plans: CustomPlanDefinition[] = [];
+  snap.forEach((docSnap) => {
+    const parsed = docToCustomPlan(docSnap.id, docSnap.data());
+    if (parsed) plans.push(parsed);
+  });
+  return plans;
 }
 
 export function subscribeCloudSanctuary(
@@ -184,6 +211,7 @@ export function subscribeCloudSanctuary(
       fromCache: boolean
     ) => void;
     onLogs: (logs: ReadingLogEntry[], fromCache: boolean) => void;
+    onCustomPlans?: (plans: CustomPlanDefinition[], fromCache: boolean) => void;
     onError: (err: Error) => void;
   }
 ): () => void {
@@ -222,9 +250,25 @@ export function subscribeCloudSanctuary(
     (err) => handlers.onError(err)
   );
 
+  const unsubPlans = handlers.onCustomPlans
+    ? onSnapshot(
+        collection(services.db, 'users', uid, 'customPlans'),
+        (snap) => {
+          const next: CustomPlanDefinition[] = [];
+          snap.forEach((docSnap) => {
+            const parsed = docToCustomPlan(docSnap.id, docSnap.data());
+            if (parsed) next.push(parsed);
+          });
+          handlers.onCustomPlans?.(next, snap.metadata.fromCache);
+        },
+        (err) => handlers.onError(err)
+      )
+    : () => {};
+
   return () => {
     unsubUser();
     unsubLogs();
+    unsubPlans();
   };
 }
 
@@ -326,4 +370,71 @@ export async function replaceCloudLogs(
   const nextIdSet = new Set(nextLogs.map((l) => l.id));
   const deleteIds = existingIds.filter((id) => !nextIdSet.has(id));
   await batchSyncReadingLogs(uid, nextLogs, deleteIds);
+}
+
+export async function upsertCloudCustomPlan(
+  uid: string,
+  plan: CustomPlanDefinition
+): Promise<void> {
+  const services = getFirebaseServices();
+  if (!services) return;
+  const ref = doc(services.db, 'users', uid, 'customPlans', plan.id);
+  await setDoc(ref, buildCloudCustomPlanPayload(uid, plan));
+}
+
+export async function deleteCloudCustomPlan(uid: string, planId: string): Promise<void> {
+  const services = getFirebaseServices();
+  if (!services) return;
+  await deleteDoc(doc(services.db, 'users', uid, 'customPlans', planId));
+}
+
+export async function batchSyncCustomPlans(
+  uid: string,
+  upserts: CustomPlanDefinition[],
+  deleteIds: string[]
+): Promise<void> {
+  const services = getFirebaseServices();
+  if (!services) return;
+
+  type PlanOp =
+    | { type: 'set'; plan: CustomPlanDefinition }
+    | { type: 'delete'; id: string };
+
+  const ops: PlanOp[] = [
+    ...deleteIds.map((id) => ({ type: 'delete' as const, id })),
+    ...upserts.map((plan) => ({ type: 'set' as const, plan })),
+  ];
+
+  for (let i = 0; i < ops.length; i += MAX_BATCH_OPS) {
+    const chunk = ops.slice(i, i + MAX_BATCH_OPS);
+    const batch = writeBatch(services.db);
+    for (const op of chunk) {
+      const ref = doc(
+        services.db,
+        'users',
+        uid,
+        'customPlans',
+        op.type === 'set' ? op.plan.id : op.id
+      );
+      if (op.type === 'set') {
+        batch.set(ref, buildCloudCustomPlanPayload(uid, op.plan));
+      } else {
+        batch.delete(ref);
+      }
+    }
+    await batch.commit();
+  }
+}
+
+export async function replaceCloudCustomPlans(
+  uid: string,
+  nextPlans: CustomPlanDefinition[],
+  knownExistingIds?: string[]
+): Promise<void> {
+  const existingIds =
+    knownExistingIds ??
+    (await fetchCloudCustomPlans(uid)).map((p) => p.id);
+  const nextIdSet = new Set(nextPlans.map((p) => p.id));
+  const deleteIds = existingIds.filter((id) => !nextIdSet.has(id));
+  await batchSyncCustomPlans(uid, nextPlans, deleteIds);
 }
