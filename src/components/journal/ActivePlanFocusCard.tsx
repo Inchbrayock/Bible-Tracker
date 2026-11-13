@@ -5,6 +5,7 @@ import { addDays, formatPlainDate, todayPlainDate } from '../../lib/dates';
 import { SPRING_PROGRESS, SPRING_SEAL, SPRING_TACTILE, TACTILE_TAP } from '../../lib/motion';
 import type { PlanCoverageMeta, PlanDayStatus, PlanProgressState } from '../../lib/plans';
 import type { ReadingPlan } from '../../types/bible';
+import { InlineDeleteConfirm } from '../ui/InlineDeleteConfirm';
 
 interface ActivePlanFocusCardProps {
   plan: ReadingPlan;
@@ -137,22 +138,13 @@ export const ActivePlanFocusCard: React.FC<ActivePlanFocusCardProps> = ({
                 </button>
               )}
               {plan.isCustom && onDeleteCustomPlan && confirmDelete && (
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => void onDeleteCustomPlan(plan.id)}
-                    className="btn-danger tactile-press inline-flex min-h-8 items-center rounded-md px-2.5 py-1 text-xs font-medium"
-                  >
-                    Confirm delete
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmDelete(false)}
-                    className="tactile-press inline-flex min-h-8 items-center rounded-md border border-[var(--border-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)]"
-                  >
-                    Cancel
-                  </button>
-                </div>
+                <InlineDeleteConfirm
+                  onCancel={() => setConfirmDelete(false)}
+                  onConfirm={() => {
+                    void onDeleteCustomPlan(plan.id);
+                    setConfirmDelete(false);
+                  }}
+                />
               )}
             </div>
           )}

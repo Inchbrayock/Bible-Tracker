@@ -31,6 +31,7 @@ import {
   type PlanSortOption,
 } from '../../lib/plans';
 import type { ReadingPlan, ReadingPlanCategory } from '../../types/bible';
+import { InlineDeleteConfirm } from '../ui/InlineDeleteConfirm';
 
 interface PlanFinderViewProps {
   plans: ReadingPlan[];
@@ -563,25 +564,13 @@ export const PlanFinderView: React.FC<PlanFinderViewProps> = ({
                         </button>
 
                         {confirmDeleteId === plan.id ? (
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setConfirmDeleteId(null);
-                                void onDeleteCustomPlan(plan.id);
-                              }}
-                              className="btn-danger tactile-press inline-flex min-h-9 items-center rounded-md px-2.5 py-1 text-xs font-medium"
-                            >
-                              Delete
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDeleteId(null)}
-                              className="tactile-press inline-flex min-h-9 items-center rounded-md border border-[var(--border-subtle)] px-2 py-1 text-xs font-medium text-[var(--text-secondary)]"
-                            >
-                              Cancel
-                            </button>
-                          </div>
+                          <InlineDeleteConfirm
+                            onCancel={() => setConfirmDeleteId(null)}
+                            onConfirm={() => {
+                              setConfirmDeleteId(null);
+                              void onDeleteCustomPlan(plan.id);
+                            }}
+                          />
                         ) : (
                           <button
                             type="button"

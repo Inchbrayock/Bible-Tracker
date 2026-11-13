@@ -246,7 +246,7 @@ describe('Journal & Plans Enhanced UI', () => {
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /^Delete$/i }));
-    fireEvent.click(screen.getByRole('button', { name: /Confirm delete/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^Delete$/i }));
 
     expect(
       await screen.findByRole('heading', { level: 2, name: /Gospels & Acts Journey/i })
@@ -270,22 +270,23 @@ describe('Journal & Plans Enhanced UI', () => {
     const selectorGroup = await screen.findByRole('group', { name: /Choose a reading plan/i });
     expect(within(selectorGroup).getAllByRole('article')).toHaveLength(4);
 
-    // Clicking delete on a default plan asks for confirmation before removing
+    // Clicking delete on a default plan asks for inline Cancel/Delete confirmation before removing
     const canonicalCard = within(selectorGroup)
       .getByText(/Canonical Bible in 1 Year/i)
       .closest('article')!;
     fireEvent.click(within(canonicalCard).getByRole('button', { name: /Delete plan from shelf/i }));
-    expect(within(canonicalCard).getByText(/Remove from shelf\?/i)).toBeInTheDocument();
+    expect(within(canonicalCard).getByRole('button', { name: /^Cancel$/i })).toBeInTheDocument();
+    expect(within(canonicalCard).getByRole('button', { name: /^Delete$/i })).toBeInTheDocument();
     expect(within(selectorGroup).getAllByRole('article')).toHaveLength(4);
 
     // Canceling leaves the default plan intact
     fireEvent.click(within(canonicalCard).getByRole('button', { name: /^Cancel$/i }));
-    expect(within(canonicalCard).queryByText(/Remove from shelf\?/i)).not.toBeInTheDocument();
+    expect(within(canonicalCard).queryByRole('button', { name: /^Cancel$/i })).not.toBeInTheDocument();
     expect(within(selectorGroup).getAllByRole('article')).toHaveLength(4);
 
     // Confirming removes Canonical Bible in 1 Year from the shelf
     fireEvent.click(within(canonicalCard).getByRole('button', { name: /Delete plan from shelf/i }));
-    fireEvent.click(within(canonicalCard).getByRole('button', { name: /Confirm delete/i }));
+    fireEvent.click(within(canonicalCard).getByRole('button', { name: /^Delete$/i }));
 
     await waitFor(() => {
       expect(within(selectorGroup).getAllByRole('article')).toHaveLength(3);
@@ -305,7 +306,7 @@ describe('Journal & Plans Enhanced UI', () => {
     fireEvent.click(
       within(activeGospelsCard).getByRole('button', { name: /Delete plan from shelf/i })
     );
-    fireEvent.click(within(activeGospelsCard).getByRole('button', { name: /Confirm delete/i }));
+    fireEvent.click(within(activeGospelsCard).getByRole('button', { name: /^Delete$/i }));
     expect(
       await screen.findByRole('heading', { level: 2, name: /Psalms & Proverbs Month/i })
     ).toBeInTheDocument();
@@ -319,7 +320,7 @@ describe('Journal & Plans Enhanced UI', () => {
       const updatedGroup = screen.getByRole('group', { name: /Choose a reading plan/i });
       const card = within(updatedGroup).getByText(title).closest('article')!;
       fireEvent.click(within(card).getByRole('button', { name: /Delete plan from shelf/i }));
-      fireEvent.click(within(card).getByRole('button', { name: /Confirm delete/i }));
+      fireEvent.click(within(card).getByRole('button', { name: /^Delete$/i }));
     }
 
     expect(await screen.findByText(/No reading plans on your shelf/i)).toBeInTheDocument();
@@ -364,7 +365,7 @@ describe('Journal & Plans Enhanced UI', () => {
     fireEvent.click(
       within(customShelfCard).getByRole('button', { name: /Delete custom plan from shelf/i })
     );
-    fireEvent.click(within(customShelfCard).getByRole('button', { name: /Confirm delete/i }));
+    fireEvent.click(within(customShelfCard).getByRole('button', { name: /^Delete$/i }));
 
     await waitFor(() => {
       const updatedShelf = screen.getByRole('group', { name: /Choose a reading plan/i });

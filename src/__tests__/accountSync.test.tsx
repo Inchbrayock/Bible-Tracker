@@ -706,7 +706,7 @@ describe('Firebase Account & Cloud Sync', () => {
     const selectorGroup = await screen.findByRole('group', { name: /Choose a reading plan/i });
     const card = within(selectorGroup).getByText(/Canonical Bible in 1 Year/i).closest('article')!;
     fireEvent.click(within(card).getByRole('button', { name: /Delete plan from shelf/i }));
-    fireEvent.click(within(card).getByRole('button', { name: /Confirm delete/i }));
+    fireEvent.click(within(card).getByRole('button', { name: /^Delete$/i }));
 
     await waitFor(() => {
       expect(within(selectorGroup).getAllByRole('article')).toHaveLength(3);

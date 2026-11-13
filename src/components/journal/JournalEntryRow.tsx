@@ -4,11 +4,12 @@ import { Compass, Edit3, Trash2 } from 'lucide-react';
 import { BOOKS_BY_ID, DIVISION_META_BY_ID } from '../../data/bibleCanon';
 import { formatPlainDate, todayPlainDate } from '../../lib/dates';
 import { getRelativeDateCue } from '../../lib/journal';
-import { FOLIO_EASE, SPRING_TACTILE, TACTILE_PILL_TAP, TACTILE_TAP } from '../../lib/motion';
+import { FOLIO_EASE, TACTILE_PILL_TAP, TACTILE_TAP } from '../../lib/motion';
 import { getReadingPlanById } from '../../lib/plans';
 import { formatChapterRanges, parseChapterInput } from '../../lib/progress';
 import { useBibleStore } from '../../store/useBibleStore';
 import type { ReadingLogEntry } from '../../types/bible';
+import { InlineDeleteConfirm } from '../ui/InlineDeleteConfirm';
 
 interface JournalEntryRowProps {
   log: ReadingLogEntry;
@@ -248,30 +249,13 @@ export const JournalEntryRow: React.FC<JournalEntryRowProps> = ({
                   </motion.button>
 
                   {confirmDelete ? (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.94 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={SPRING_TACTILE}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-[var(--color-crimson)] p-1 text-xs"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setConfirmDelete(false)}
-                        className="min-h-8 rounded px-2 text-[var(--text-secondary)] hover:underline"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void onDelete(log.id);
-                          setConfirmDelete(false);
-                        }}
-                        className="min-h-8 rounded px-2 font-semibold text-[var(--color-crimson)] hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </motion.div>
+                    <InlineDeleteConfirm
+                      onCancel={() => setConfirmDelete(false)}
+                      onConfirm={() => {
+                        void onDelete(log.id);
+                        setConfirmDelete(false);
+                      }}
+                    />
                   ) : (
                     <motion.button
                       type="button"

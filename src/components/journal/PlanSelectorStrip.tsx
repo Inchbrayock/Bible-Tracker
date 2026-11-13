@@ -4,6 +4,7 @@ import { Check, Compass, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { SPRING_PROGRESS, SPRING_TACTILE, TACTILE_PILL_TAP, TACTILE_TAP } from '../../lib/motion';
 import type { PlanProgressState } from '../../lib/plans';
 import type { ReadingPlan } from '../../types/bible';
+import { InlineDeleteConfirm } from '../ui/InlineDeleteConfirm';
 
 export interface RemovedShelfNotice {
   planId: string;
@@ -58,15 +59,15 @@ export const PlanSelectorStrip: React.FC<PlanSelectorStripProps> = ({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 gap-2.5 sm:flex sm:shrink-0 sm:flex-wrap sm:items-center sm:gap-2">
           <motion.button
             type="button"
             whileTap={TACTILE_TAP}
             transition={SPRING_TACTILE}
             onClick={onOpenFinder}
-            className="tactile-press inline-flex min-h-9 items-center gap-1.5 rounded-md border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+            className="tactile-press inline-flex min-h-10 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-[var(--border-strong)] bg-[var(--bg-elevated)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] sm:min-h-9 sm:w-auto sm:px-3"
           >
-            <Search className="h-3.5 w-3.5" aria-hidden="true" />
+            <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>Find a plan</span>
             <span className="rounded bg-[var(--bg-subtle)] px-1.5 py-0.5 text-[0.68rem] tabular-nums text-[var(--text-secondary)]">
               {totalCatalogCount}
@@ -78,9 +79,9 @@ export const PlanSelectorStrip: React.FC<PlanSelectorStripProps> = ({
             whileTap={TACTILE_TAP}
             transition={SPRING_TACTILE}
             onClick={onCreateCustomPlan}
-            className="btn-primary inline-flex min-h-9 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-90"
+            className="btn-primary inline-flex min-h-10 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-opacity hover:opacity-90 sm:min-h-9 sm:w-auto sm:px-3"
           >
-            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+            <Plus className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             <span>Create custom plan</span>
           </motion.button>
         </div>
@@ -176,20 +177,33 @@ export const PlanSelectorStrip: React.FC<PlanSelectorStripProps> = ({
                 key={plan.id}
                 aria-labelledby={titleId}
                 className={`group relative flex flex-col justify-between overflow-hidden rounded-lg border transition-colors ${
-                  confirmingDelete
-                    ? 'border-[var(--color-crimson)] bg-[var(--bg-elevated)]'
-                    : isSelected
-                      ? 'border-[var(--color-accent)] bg-[var(--bg-elevated)] ring-1 ring-[var(--color-accent)]'
-                      : 'border-[var(--border-subtle)] bg-[var(--bg-surface)]/65 hover:border-[var(--border-strong)] hover:bg-[var(--bg-elevated)]'
+                  isSelected
+                    ? 'border-[var(--color-accent)] bg-[var(--bg-elevated)] ring-1 ring-[var(--color-accent)]'
+                    : 'border-[var(--border-subtle)] bg-[var(--bg-surface)]/65 hover:border-[var(--border-strong)] hover:bg-[var(--bg-elevated)]'
                 }`}
               >
                 <span
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-y-0 left-0 w-1"
-                  style={{ backgroundColor: confirmingDelete ? 'var(--color-crimson)' : plan.accentColor }}
+                  style={{ backgroundColor: plan.accentColor }}
                 />
 
-                {!confirmingDelete && (
+                {confirmingDelete ? (
+                  <InlineDeleteConfirm
+                    compactOnMobile
+                    describedBy={titleId}
+                    className="absolute right-2 top-2 z-10"
+                    onCancel={() => setConfirmDeleteId(null)}
+                    onConfirm={() => {
+                      setConfirmDeleteId(null);
+                      if (plan.isCustom) {
+                        void onDeleteCustomPlan(plan.id);
+                      } else {
+                        onRemoveFromShelf(plan.id);
+                      }
+                    }}
+                  />
+                ) : (
                   <motion.button
                     type="button"
                     whileTap={TACTILE_PILL_TAP}
@@ -216,31 +230,31 @@ export const PlanSelectorStrip: React.FC<PlanSelectorStripProps> = ({
                   className="flex h-full w-full flex-col justify-between p-3.5 text-left"
                 >
                   <div className="w-full pl-2">
-                    <div
-                      className={`flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs ${
-                        confirmingDelete ? 'pr-0' : 'pr-9'
-                      }`}
-                    >
-                      <span className="tabular-nums text-[var(--text-secondary)]">
-                        {plan.durationDays} days
-                      </span>
-                      {plan.isCustom && (
-                        <span className="rounded bg-[var(--color-lamp-soft)] px-1.5 py-0.5 text-[0.65rem] font-medium text-[var(--color-lamp)]">
-                          Custom
+                    {confirmingDelete ? (
+                      <div className="h-9" aria-hidden="true" />
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 pr-9 text-xs">
+                        <span className="tabular-nums text-[var(--text-secondary)]">
+                          {plan.durationDays} days
                         </span>
-                      )}
-                      {isFinished ? (
-                        <span className="inline-flex items-center gap-1 font-medium text-[var(--color-sage)]">
-                          <Check className="h-3 w-3" aria-hidden="true" />
-                          Done
-                        </span>
-                      ) : isSelected ? (
-                        <span className="inline-flex items-center gap-1 font-medium text-[var(--color-accent)]">
-                          <Compass className="h-3 w-3" aria-hidden="true" />
-                          Active
-                        </span>
-                      ) : null}
-                    </div>
+                        {plan.isCustom && (
+                          <span className="rounded bg-[var(--color-lamp-soft)] px-1.5 py-0.5 text-[0.65rem] font-medium text-[var(--color-lamp)]">
+                            Custom
+                          </span>
+                        )}
+                        {isFinished ? (
+                          <span className="inline-flex items-center gap-1 font-medium text-[var(--color-sage)]">
+                            <Check className="h-3 w-3" aria-hidden="true" />
+                            Done
+                          </span>
+                        ) : isSelected ? (
+                          <span className="inline-flex items-center gap-1 font-medium text-[var(--color-accent)]">
+                            <Compass className="h-3 w-3" aria-hidden="true" />
+                            Active
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
 
                     <span
                       id={titleId}
@@ -250,69 +264,26 @@ export const PlanSelectorStrip: React.FC<PlanSelectorStripProps> = ({
                     </span>
                   </div>
 
-                  {!confirmingDelete && (
-                    <div className="mt-3 w-full pl-2">
-                      <div className="flex items-baseline justify-between gap-2 text-xs tabular-nums text-[var(--text-secondary)]">
-                        <span>
-                          {completedDays}/{plan.durationDays} days
-                        </span>
-                        <span>{pct}%</span>
-                      </div>
-                      <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
-                        <motion.div
-                          className="h-full rounded-full"
-                          initial={false}
-                          animate={{ width: `${pct}%` }}
-                          transition={SPRING_PROGRESS}
-                          style={{
-                            backgroundColor: isFinished ? 'var(--color-sage)' : plan.accentColor,
-                          }}
-                        />
-                      </div>
+                  <div className="mt-3 w-full pl-2">
+                    <div className="flex items-baseline justify-between gap-2 text-xs tabular-nums text-[var(--text-secondary)]">
+                      <span>
+                        {completedDays}/{plan.durationDays} days
+                      </span>
+                      <span>{pct}%</span>
                     </div>
-                  )}
-                </motion.button>
-
-                {confirmingDelete && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.96 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={SPRING_TACTILE}
-                    className="mx-2.5 mb-2.5 ml-3.5 rounded-md border border-[var(--color-crimson)] bg-[var(--bg-canvas)] p-2.5 text-xs"
-                  >
-                    <p className="font-medium text-[var(--text-primary)]">
-                      {plan.isCustom ? 'Delete custom plan?' : 'Remove from shelf?'}
-                    </p>
-                    <p className="mt-0.5 text-[0.7rem] leading-snug text-[var(--text-secondary)]">
-                      {plan.isCustom
-                        ? 'Deletes this custom schedule.'
-                        : 'Re-add anytime in Plan Finder.'}
-                    </p>
-                    <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setConfirmDeleteId(null)}
-                        className="tactile-press inline-flex min-h-8 items-center rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setConfirmDeleteId(null);
-                          if (plan.isCustom) {
-                            void onDeleteCustomPlan(plan.id);
-                          } else {
-                            onRemoveFromShelf(plan.id);
-                          }
+                    <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
+                      <motion.div
+                        className="h-full rounded-full"
+                        initial={false}
+                        animate={{ width: `${pct}%` }}
+                        transition={SPRING_PROGRESS}
+                        style={{
+                          backgroundColor: isFinished ? 'var(--color-sage)' : plan.accentColor,
                         }}
-                        className="btn-danger tactile-press inline-flex min-h-8 items-center rounded px-2.5 py-1 text-xs font-semibold hover:opacity-90"
-                      >
-                        Confirm delete
-                      </button>
+                      />
                     </div>
-                  </motion.div>
-                )}
+                  </div>
+                </motion.button>
               </article>
             );
           })}
