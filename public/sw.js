@@ -1,12 +1,15 @@
-const CACHE_NAME = 'selah-pwa-v2';
+const CACHE_NAME = 'selah-pwa-v3';
+const SCOPE_URL = new URL('./', self.location.href);
+const SCOPE_PATH = SCOPE_URL.pathname;
+const INDEX_URL = new URL('index.html', SCOPE_URL).href;
 const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/manifest.webmanifest',
-  '/apple-touch-icon.png',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/favicon.svg',
+  SCOPE_URL.href,
+  INDEX_URL,
+  new URL('manifest.webmanifest', SCOPE_URL).href,
+  new URL('apple-touch-icon.png', SCOPE_URL).href,
+  new URL('icon-192.png', SCOPE_URL).href,
+  new URL('icon-512.png', SCOPE_URL).href,
+  new URL('favicon.svg', SCOPE_URL).href,
 ];
 
 self.addEventListener('install', (event) => {
@@ -41,7 +44,11 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname === '/sw.js' || url.pathname === '/version.json' || url.pathname.startsWith('/__/')) {
+  if (
+    url.pathname === `${SCOPE_PATH}sw.js` ||
+    url.pathname === `${SCOPE_PATH}version.json` ||
+    url.pathname.startsWith('/__/')
+  ) {
     return;
   }
 
@@ -52,12 +59,12 @@ self.addEventListener('fetch', (event) => {
         .then((response) => {
           if (response.ok) {
             const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', copy));
+            caches.open(CACHE_NAME).then((cache) => cache.put(INDEX_URL, copy));
           }
           return response;
         })
         .catch(() =>
-          caches.match('/index.html').then((cached) => cached || caches.match('/'))
+          caches.match(INDEX_URL).then((cached) => cached || caches.match(SCOPE_URL.href))
         )
     );
     return;

@@ -133,13 +133,13 @@ describe('appUpdater logic and UI', () => {
   it('validates trusted GitHub URLs and parses update.json and GitHub Release API payloads', () => {
     expect(
       isTrustedGitHubApkUrl(
-        'https://github.com/Inchbrayock/Bible-Tracker/releases/download/v1.3.0/Selah-v1.3.0-3-release.apk'
+        'https://github.com/Inchbrayock/Selah/releases/download/v1.3.0/Selah-v1.3.0-3-release.apk'
       )
     ).toBe(true);
     expect(
       isTrustedGitHubApkUrl('https://github.com/other/repo/releases/download/v1.0.0/app.apk')
     ).toBe(false);
-    expect(isTrustedGitHubApkUrl('http://github.com/Inchbrayock/Bible-Tracker/app.apk')).toBe(
+    expect(isTrustedGitHubApkUrl('http://github.com/Inchbrayock/Selah/app.apk')).toBe(
       false
     );
 
@@ -149,7 +149,7 @@ describe('appUpdater logic and UI', () => {
         versionCode: 3,
         apkName: 'Selah-v1.3.0-3-release.apk',
         apkUrl:
-          'https://github.com/Inchbrayock/Bible-Tracker/releases/download/v1.3.0/Selah-v1.3.0-3-release.apk',
+          'https://github.com/Inchbrayock/Selah/releases/download/v1.3.0/Selah-v1.3.0-3-release.apk',
         sha256: 'a'.repeat(64),
       })
     );
@@ -158,7 +158,7 @@ describe('appUpdater logic and UI', () => {
       versionCode: 3,
       apkName: 'Selah-v1.3.0-3-release.apk',
       apkUrl:
-        'https://github.com/Inchbrayock/Bible-Tracker/releases/download/v1.3.0/Selah-v1.3.0-3-release.apk',
+        'https://github.com/Inchbrayock/Selah/releases/download/v1.3.0/Selah-v1.3.0-3-release.apk',
       sha256: 'a'.repeat(64),
       releaseUrl: undefined,
     });
@@ -166,17 +166,17 @@ describe('appUpdater logic and UI', () => {
     const githubRelease = parseReleasePayload(
       JSON.stringify({
         tag_name: 'v1.4.0',
-        html_url: 'https://github.com/Inchbrayock/Bible-Tracker/releases/tag/v1.4.0',
+        html_url: 'https://github.com/Inchbrayock/Selah/releases/tag/v1.4.0',
         assets: [
           {
             name: 'Selah-v1.4.0-4-debug.apk',
             browser_download_url:
-              'https://github.com/Inchbrayock/Bible-Tracker/releases/download/v1.4.0/Selah-v1.4.0-4-debug.apk',
+              'https://github.com/Inchbrayock/Selah/releases/download/v1.4.0/Selah-v1.4.0-4-debug.apk',
           },
           {
             name: 'Selah-v1.4.0-4-release.apk',
             browser_download_url:
-              'https://github.com/Inchbrayock/Bible-Tracker/releases/download/v1.4.0/Selah-v1.4.0-4-release.apk',
+              'https://github.com/Inchbrayock/Selah/releases/download/v1.4.0/Selah-v1.4.0-4-release.apk',
             digest: `sha256:${'B'.repeat(64)}`,
           },
         ],
@@ -194,13 +194,13 @@ describe('appUpdater logic and UI', () => {
     updaterMock.canRequestPackageInstalls.mockResolvedValue({ granted: false });
     updaterMock.fetchReleaseManifest.mockResolvedValue({
       status: 200,
-      url: 'https://github.com/Inchbrayock/Bible-Tracker/releases/latest/download/update.json',
+      url: 'https://github.com/Inchbrayock/Selah/releases/latest/download/update.json',
       body: JSON.stringify({
         version: '1.3.0',
         versionCode: 3,
         apkName: 'Selah-v1.3.0-3-release.apk',
         apkUrl:
-          'https://github.com/Inchbrayock/Bible-Tracker/releases/download/v1.3.0/Selah-v1.3.0-3-release.apk',
+          'https://github.com/Inchbrayock/Selah/releases/download/v1.3.0/Selah-v1.3.0-3-release.apk',
         sha256: 'c'.repeat(64),
       }),
     });
@@ -232,7 +232,7 @@ describe('appUpdater logic and UI', () => {
       await screen.findByText(/Selah v1\.3\.0 is ready to install/i)
     ).toBeInTheDocument();
     expect(updaterMock.downloadAndVerifyApk).toHaveBeenCalledWith({
-      url: 'https://github.com/Inchbrayock/Bible-Tracker/releases/download/v1.3.0/Selah-v1.3.0-3-release.apk',
+      url: 'https://github.com/Inchbrayock/Selah/releases/download/v1.3.0/Selah-v1.3.0-3-release.apk',
       expectedSha256: 'c'.repeat(64),
       minVersionCode: 3,
       fileName: 'Selah-v1.3.0-3-release.apk',
@@ -288,13 +288,13 @@ describe('appUpdater logic and UI', () => {
     updaterMock.canRequestPackageInstalls.mockResolvedValue({ granted: true });
     updaterMock.fetchReleaseManifest.mockResolvedValue({
       status: 200,
-      url: 'https://github.com/Inchbrayock/Bible-Tracker/releases/latest/download/update.json',
+      url: 'https://github.com/Inchbrayock/Selah/releases/latest/download/update.json',
       body: JSON.stringify({
         version: '1.3.0',
         versionCode: 3,
         apkName: 'Selah-v1.3.0-3-release.apk',
         apkUrl:
-          'https://github.com/Inchbrayock/Bible-Tracker/releases/download/v1.3.0/Selah-v1.3.0-3-release.apk',
+          'https://github.com/Inchbrayock/Selah/releases/download/v1.3.0/Selah-v1.3.0-3-release.apk',
       }),
     });
     updaterMock.downloadAndVerifyApk.mockResolvedValue({

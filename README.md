@@ -37,6 +37,12 @@ The app works immediately with local browser storage. To enable account sign-in 
 2. Enable **Email/Password** and **Google** sign-in in Firebase Authentication.
 3. Deploy the included `firestore.rules` and `firestore.indexes.json` using the Firebase CLI.
 
+## Web Hosting (GitHub Pages)
+
+Pushing to `main` runs `.github/workflows/deploy-pages.yml`, builds the Vite bundle with the Pages base path (`VITE_BASE_PATH`) and `VITE_FIREBASE_*` repository secrets, and deploys the static site to **GitHub Pages** (`https://inchbrayock.github.io/Selah/`).
+
+- If using Firebase Authentication (Google / Email sign-in) on the hosted site, ensure `inchbrayock.github.io` is added under **Firebase Console → Authentication → Settings → Authorized domains**.
+
 ## Mobile App (Android APK & iPhone Safari PWA)
 
 Selah wraps the compiled Vite app (`dist/`) as a native Android APK via Capacitor using bundle ID `com.selah.bible`, while iPhone uses the free Safari "Add to Home Screen" web app (no Mac or Apple Developer account required).

@@ -21,7 +21,15 @@ function versionManifestPlugin(): Plugin {
   };
 }
 
+function resolveBasePath(raw?: string): string {
+  if (!raw) return '/';
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed === '/') return '/';
+  return `/${trimmed.replace(/^\/+|\/+$/g, '')}/`;
+}
+
 export default defineConfig({
+  base: resolveBasePath(process.env.VITE_BASE_PATH),
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
   },

@@ -261,7 +261,9 @@ export const AppUpdaterProvider: React.FC<{
 
           // Web / iPhone Safari PWA check
           if ('serviceWorker' in navigator) {
-            const registration = await navigator.serviceWorker.getRegistration('/sw.js');
+            const registration = await navigator.serviceWorker.getRegistration(
+              `${import.meta.env.BASE_URL}sw.js`
+            );
             if (registration) {
               await registration.update().catch(() => {});
               if (registration.waiting) {

@@ -12,9 +12,11 @@ import './styles/tokens.css';
 if (import.meta.env.PROD && typeof window !== 'undefined' && 'serviceWorker' in navigator) {
   if (!isNativePlatform()) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => {
-        // Ignore offline SW registration errors cleanly
-      });
+      navigator.serviceWorker
+        .register(`${import.meta.env.BASE_URL}sw.js`, { updateViaCache: 'none' })
+        .catch(() => {
+          // Ignore offline SW registration errors cleanly
+        });
     });
   } else {
     navigator.serviceWorker

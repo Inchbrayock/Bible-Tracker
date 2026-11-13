@@ -2,7 +2,7 @@ import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor
 import { getNativePlatform, isNativePlatform } from './nativeShell';
 
 export const GITHUB_OWNER = 'Inchbrayock';
-export const GITHUB_REPO = 'Bible-Tracker';
+export const GITHUB_REPO = 'Selah';
 
 export const RELEASE_MANIFEST_URLS = [
   `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest/download/update.json`,
@@ -302,7 +302,9 @@ export async function checkWebVersionUpdate(): Promise<string | null> {
   if (typeof window === 'undefined' || typeof fetch !== 'function') {
     return null;
   }
-  const res = await fetch(`/version.json?t=${Date.now()}`, { cache: 'no-store' });
+  const res = await fetch(`${import.meta.env.BASE_URL}version.json?t=${Date.now()}`, {
+    cache: 'no-store',
+  });
   if (!res.ok) return null;
   const data = (await res.json()) as { version?: unknown };
   if (typeof data?.version !== 'string') return null;
