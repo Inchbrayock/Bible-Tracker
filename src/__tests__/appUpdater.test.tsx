@@ -306,11 +306,16 @@ describe('appUpdater logic and UI', () => {
     });
 
     const AutoCheckTrigger: React.FC = () => {
-      const { checkForUpdates } = useAppUpdater();
+      const { currentVersion, currentBuild, autoUpdateEnabled, checkForUpdates } = useAppUpdater();
       return (
-        <button type="button" onClick={() => void checkForUpdates({ manual: false })}>
-          Auto check
-        </button>
+        <div>
+          <span data-testid="auto-info">
+            {`${currentVersion}:${currentBuild}:${autoUpdateEnabled}`}
+          </span>
+          <button type="button" onClick={() => void checkForUpdates({ manual: false })}>
+            Auto check
+          </button>
+        </div>
       );
     };
 
@@ -321,8 +326,22 @@ describe('appUpdater logic and UI', () => {
       </AppUpdaterProvider>
     );
 
+    await waitFor(() => {
+      expect(updaterMock.appGetInfo).toHaveBeenCalled();
+      expect(screen.getByTestId('auto-info').textContent).toBe('1.2.0:2:true');
+    });
+
     fireEvent.click(screen.getByRole('button', { name: /Auto check/i }));
 
+    await waitFor(() => {
+      expect(updaterMock.fetchReleaseManifest).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(updaterMock.downloadAndVerifyApk).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      expect(updaterMock.canRequestPackageInstalls).toHaveBeenCalled();
+    });
     await waitFor(() => {
       expect(updaterMock.installDownloadedApk).toHaveBeenCalledWith({
         path: '/data/user/0/com.selah.bible/cache/updates/Selah-v1.3.0-3-release.apk',
